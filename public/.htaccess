@@ -1,0 +1,9 @@
+Header add Access-Control-Allow-Origin "*"
+  Header add Access-Control-Allow-Methods: "GET,POST,OPTIONS,DELETE,PUT"
+  Header add Access-Control-Allow-Headers: "Content-Type"
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule . index.php [L]
+php_value max_execution_time 120
+php_value max_file_uploads 300

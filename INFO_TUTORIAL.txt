@@ -1,0 +1,19 @@
+id
+nombre
+apellidos
+telefono
+email
+direccion
+ciudad
+departamento
+
+
+{    
+  "nombre":"Cesar",
+  "apellidos":"Grisales",
+  "telefono":"335974",
+  "email":"cesar44@yahoo.es",
+  "direccion":"Calle 56 # 78-25",
+  "ciudad":"Medellín",
+  "departamento":"Antioquia"
+}
