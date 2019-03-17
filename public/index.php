@@ -7,6 +7,10 @@ require '../vendor/autoload.php';
 require '../src/config/db.php';
 require '../src/config/auth.php';
 require '../src/config/xml_info.php';
+require '../src/config/fechas.php';
+require '../src/config/idCreator.php';
+require '../src/config/pdfCreator.php';
+require '../src/config/conversorNumero.php';
 
 $app = new \Slim\App;
 $app->add(function ($req, $res, $next) {

@@ -1,0 +1,82 @@
+@page {
+    size: 210mm 297mm;
+    /* <length>{1,2} | auto | portrait | landscape */
+    /* 'em' 'ex' and % are not allowed; length values are width height */
+    margin: 1%;
+    /* <any of the usual CSS values for margins> */
+}
+
+.div_carta {
+    width: 210mm;
+    height: 148mm;
+    padding: 20px 60px;
+}
+
+.nombre_empresa {
+    text-align: center;
+    font-weight: bold;
+    color: red;
+    font-size: 25px;
+    font-family: 'PT Serif', serif;
+}
+
+.titulo_empresa {
+    text-align: center;
+    font-weight: bold;
+    font-size: 22px;
+    font-family: 'PT Serif', serif;
+}
+
+.texto_info {
+    text-align: left;
+    font-size: 9px;
+    font-family: 'PT Serif', serif;
+}
+
+.separador {
+    width: 100%;
+    padding-top: -5px;
+    float: left;
+}
+
+.folio {
+    font-family: 'PT Serif', serif;
+    font-size: 16px;
+    color: red;
+    float: left;
+}
+
+.bueno_por {
+    font-family: 'PT Serif', serif;
+    font-size: 16px;
+    text-align: right;
+}
+
+.cuerpo {
+    width: 100%;
+    padding-left: 30px;
+    padding-right: 30px;
+    font-family: 'PT Serif', serif;
+    font-size: 18px;
+    text-align: justify;
+    line-height: 25pt;
+}
+
+.fecha {
+    width: 100%;
+    text-align: right;
+    padding-right: 30px;
+    padding-top: 40px;
+    font-family: 'PT Serif', serif;
+    font-size: 18px;
+}
+
+.firma_contador {
+    width: 45%;
+    border-top: 1px solid black;
+    text-align: left;
+    padding-left: 30px;
+    margin-top: 60px;
+    font-family: 'PT Serif', serif;
+    font-size: 18px;
+}

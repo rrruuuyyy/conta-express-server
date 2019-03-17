@@ -3,7 +3,6 @@ header("Content-Type: text/html;charset=utf-8");
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-
 $app->post('/api/usuarios/new', function(Request $request, Response $response){
     $nombre = $request->getParam('nombre');
     $apellidos = $request->getParam('apellidos');

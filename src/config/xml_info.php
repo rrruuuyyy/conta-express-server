@@ -161,76 +161,114 @@
                 }
                 
             }
-            // if($CFDI->TipoDeComprobante === 'N'){
-            //     $nomina = (object)[];
-            //     $nomina->receptor = (object)[];
-            //     $nomina->emisor = (object)[];
+            if($CFDI->TipoDeComprobante === 'N'){
+                $nomina = (object)[];
+                $nomina->receptor = (object)[];
+                $nomina->emisor = (object)[];
                 
-            //     $xml->registerXPathNamespace('c', $ns['cfdi']);
-            //     $xml->registerXPathNamespace('n', $ns['nomina12']);
-            //     foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina') as $n){
-            //         $nomina->FechaInicialPago = "{$n['FechaInicialPago']}";
-            //         $nomina->FechaFinalPago = "{$n['FechaFinalPago']}";
-            //         $nomina->FechaPago = "{$n['FechaPago']}";
-            //         $nomina->NumDiasPagados = "{$n['NumDiasPagados']}";
-            //     }
-            //     foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:Receptor') as $nomina_receptor){
-            //         $nomina->receptor->Curp = "{$nomina_receptor['Curp']}";
-            //         $nomina->receptor->NumSeguridadSocial = "{$nomina_receptor['NumSeguridadSocial']}";
-            //         $nomina->receptor->FechaInicioRelLaboral = "{$nomina_receptor['FechaInicioRelLaboral']}";
-            //         $nomina->receptor->Antiguedad = "{$nomina_receptor['Antigüedad']}";
-            //         $nomina->receptor->TipoContrato = "{$nomina_receptor['TipoContrato']}";
-            //         $nomina->receptor->Sindicalizado = "{$nomina_receptor['Sindicalizado']}";
-            //         $nomina->receptor->TipoJornada = "{$nomina_receptor['TipoJornada']}";
-            //         $nomina->receptor->TipoRegimen = "{$nomina_receptor['TipoRegimen']}";
-            //         $nomina->receptor->NumEmpleado = "{$nomina_receptor['NumEmpleado']}";
-            //         $nomina->receptor->Departamento = "{$nomina_receptor['Departamento']}";
-            //         $nomina->receptor->Puesto = "{$nomina_receptor['Puesto']}";
-            //         $nomina->receptor->RiesgoPuesto = "{$nomina_receptor['RiesgoPuesto']}";
-            //         $nomina->receptor->PeriodicidadPago = "{$nomina_receptor['PeriodicidadPago']}";
-            //         $nomina->receptor->Banco = "{$nomina_receptor['Banco']}";
-            //         $nomina->receptor->CuentaBancaria = "{$nomina_receptor['CuentaBancaria']}";
-            //         $nomina->receptor->SalarioBaseCotApor = "{$nomina_receptor['SalarioBaseCotApor']}";
-            //         $nomina->receptor->SalarioDiarioIntegrado = "{$nomina_receptor['SalarioDiarioIntegrado']}";
-            //         $nomina->receptor->ClaveEntFed = "{$nomina_receptor['ClaveEntFed']}";
-            //     }
-            //     foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:Emisor') as $e){
-            //         $nomina->emisor->Curp = "{$e['Curp']}";
-            //         $nomina->emisor->RegistroPatronal = "{$e['RegistroPatronal']}";
-            //     }
-            //     $nomina_conceptos = [];
-            //     foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:Percepciones/n:Percepcion') as $Concepto){
-            //         $concepto = null;
-            //         $concepto['tipo'] = "{$Concepto['TipoPercepcion']}";
-            //         $concepto['Clave'] = "{$Concepto['Clave']}";
-            //         $concepto['Concepto'] = "{$Concepto['Concepto']}";
-            //         $concepto['ImporteGravado'] = "{$Concepto['ImporteGravado']}";
-            //         $concepto['ImporteExento'] = "{$Concepto['ImporteExento']}";
-            //         $concepto['info'] = "percepcion";
-            //         array_push($nomina_conceptos,$concepto);
-            //     }
-            //     foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:Deducciones/n:Deduccion') as $Concepto){
-            //         $concepto = null;
-            //         $concepto['tipo'] = "{$Concepto['TipoDeduccion']}";
-            //         $concepto['Clave'] = "{$Concepto['Clave']}";
-            //         $concepto['Concepto'] = "{$Concepto['Concepto']}";
-            //         $concepto['Importe'] = "{$Concepto['Importe']}";
-            //         $concepto['info'] = "deduccion";
-            //         array_push($nomina_conceptos,$concepto);
-            //     }
-            //     foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:OtrosPagos/n:OtroPago') as $Concepto){
-            //         $concepto = null;
-            //         $concepto['tipo'] = "{$Concepto['TipoOtroPago']}";
-            //         $concepto['Clave'] = "{$Concepto['Clave']}";
-            //         $concepto['Concepto'] = "{$Concepto['Concepto']}";
-            //         $concepto['Importe'] = "{$Concepto['Importe']}";
-            //         $concepto['info'] = "otro";
-            //         array_push($nomina_conceptos,$concepto);
-            //     }                
-            //     $nomina->conceptos = $nomina_conceptos;
-            //     $CFDI->Complementos->Nomina = $nomina;
+                $xml->registerXPathNamespace('c', $ns['cfdi']);
+                $xml->registerXPathNamespace('n', $ns['nomina12']);
+                foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina') as $n){
+                    $nomina->FechaInicialPago = "{$n['FechaInicialPago']}";
+                    $nomina->FechaFinalPago = "{$n['FechaFinalPago']}";
+                    $nomina->FechaPago = "{$n['FechaPago']}";
+                    $nomina->NumDiasPagados = "{$n['NumDiasPagados']}";
+                }
+                foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:Receptor') as $nomina_receptor){
+                    $nomina->receptor->Curp = "{$nomina_receptor['Curp']}";
+                    $nomina->receptor->NumSeguridadSocial = "{$nomina_receptor['NumSeguridadSocial']}";
+                    $nomina->receptor->FechaInicioRelLaboral = "{$nomina_receptor['FechaInicioRelLaboral']}";
+                    $nomina->receptor->Antiguedad = "{$nomina_receptor['Antigüedad']}";
+                    $nomina->receptor->TipoContrato = "{$nomina_receptor['TipoContrato']}";
+                    $nomina->receptor->Sindicalizado = "{$nomina_receptor['Sindicalizado']}";
+                    $nomina->receptor->TipoJornada = "{$nomina_receptor['TipoJornada']}";
+                    $nomina->receptor->TipoRegimen = "{$nomina_receptor['TipoRegimen']}";
+                    $nomina->receptor->NumEmpleado = "{$nomina_receptor['NumEmpleado']}";
+                    $nomina->receptor->Departamento = "{$nomina_receptor['Departamento']}";
+                    $nomina->receptor->Puesto = "{$nomina_receptor['Puesto']}";
+                    $nomina->receptor->RiesgoPuesto = "{$nomina_receptor['RiesgoPuesto']}";
+                    $nomina->receptor->PeriodicidadPago = "{$nomina_receptor['PeriodicidadPago']}";
+                    $nomina->receptor->Banco = "{$nomina_receptor['Banco']}";
+                    $nomina->receptor->CuentaBancaria = "{$nomina_receptor['CuentaBancaria']}";
+                    $nomina->receptor->SalarioBaseCotApor = "{$nomina_receptor['SalarioBaseCotApor']}";
+                    $nomina->receptor->SalarioDiarioIntegrado = "{$nomina_receptor['SalarioDiarioIntegrado']}";
+                    $nomina->receptor->ClaveEntFed = "{$nomina_receptor['ClaveEntFed']}";
+                }
+                foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:Emisor') as $e){
+                    $nomina->emisor->Curp = "{$e['Curp']}";
+                    $nomina->emisor->RegistroPatronal = "{$e['RegistroPatronal']}";
+                }
+                $nomina_conceptos = [];
+                // Obtenemos las variables de deducciones, percepciones otros
+                $TotalSueldos = 0;
+                $TotalSeparacionIndemizacion = 0;
+                $TotalJubilacionPensionRetiro = 0;
+                $TotalGravado = 0;
+                $TotalExento = 0;
+                foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:Percepciones') as $t){
+                    $TotalSueldos = $TotalSueldos + $t['TotalSueldos'];
+                    $TotalSeparacionIndemizacion = $TotalSeparacionIndemizacion + $t['TotalSeparacionIndemizacion'];
+                    $TotalJubilacionPensionRetiro = $TotalJubilacionPensionRetiro + $t['TotalJubilacionPensionRetiro'];
+                    $TotalGravado = $TotalGravado + $t['TotalGravado'];
+                    $TotalExento = $TotalExento + $t['TotalExento'];
+                }
+                $nomina->TotalSueldos = $TotalSueldos;
+                $nomina->TotalSeparacionIndemizacion = $TotalSeparacionIndemizacion;
+                $nomina->TotalJubilacionPensionRetiro = $TotalJubilacionPensionRetiro;
+                $nomina->TotalGravado = $TotalGravado;
+                $nomina->TotalExento = $TotalExento;
+                // FIN
+                foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:Percepciones/n:Percepcion') as $Concepto){
+                    $concepto = null;
+                    $concepto['tipo'] = "{$Concepto['TipoPercepcion']}";
+                    $concepto['Clave'] = "{$Concepto['Clave']}";
+                    $concepto['Concepto'] = "{$Concepto['Concepto']}";
+                    $concepto['ImporteGravado'] = "{$Concepto['ImporteGravado']}";
+                    $concepto['ImporteExento'] = "{$Concepto['ImporteExento']}";
+                    $concepto['info'] = "percepcion";
+                    array_push($nomina_conceptos,$concepto);
+                }
+                $TotalOtrasDeducciones = 0;
+                $TotalImpuestosRetenidos = 0;
+                foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:Deducciones') as $c){
+                    $TotalOtrasDeducciones = $TotalOtrasDeducciones + $c['TotalOtrasDeducciones'];
+                    $TotalImpuestosRetenidos = $TotalImpuestosRetenidos + $c['TotalImpuestosRetenidos'];
+                }
+                $nomina->TotalOtrasDeducciones = $TotalOtrasDeducciones;
+                $nomina->TotalImpuestosRetenidos = $TotalImpuestosRetenidos;
+                foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:Deducciones/n:Deduccion') as $Concepto){
+                    $concepto = null;
+                    $concepto['tipo'] = "{$Concepto['TipoDeduccion']}";
+                    $concepto['Clave'] = "{$Concepto['Clave']}";
+                    $concepto['Concepto'] = "{$Concepto['Concepto']}";
+                    $concepto['Importe'] = "{$Concepto['Importe']}";
+                    $concepto['info'] = "deduccion";
+                    array_push($nomina_conceptos,$concepto);
+                }
+                $SubsidioCausado = 0;
+                $SubsidioImporte = 0;
+                foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:OtrosPagos/n:OtroPago') as $Concepto){
+                    $concepto = null;
+                    $concepto['tipo'] = "{$Concepto['TipoOtroPago']}";
+                    $concepto['Clave'] = "{$Concepto['Clave']}";
+                    $concepto['Concepto'] = "{$Concepto['Concepto']}";
+                    $concepto['Importe'] = "{$Concepto['Importe']}";
+                    $concepto['info'] = "otro";
+                    if($concepto['tipo'] === "002"){
+                        foreach ($xml->xpath('/c:Comprobante/c:Complemento/n:Nomina/n:OtrosPagos/n:OtroPago/n:SubsidioAlEmpleo') as $sub){
+                            $SubsidioCausado = "{$sub['SubsidioCausado']}";
+                        }
+                        $SubsidioImporte = "{$Concepto['Importe']}";
+                    }
+                    array_push($nomina_conceptos,$concepto);
+                }
+                $nomina->SubsidioCausado = $SubsidioCausado;           
+                $nomina->SubsidioImporte = $SubsidioImporte;           
+                $nomina->conceptos = $nomina_conceptos;
+                $CFDI->Complementos->Nomina = $nomina;
 
-            // }
+            }
+            $TotalPagos = 0;
             if($CFDI->TipoDeComprobante === "P"){
                 // Variables para pago
                 $xml_pagos = (object)[];
@@ -260,6 +298,7 @@
                     $pago->documentos = [];
                     array_push($pagos,$pago);
                     array_push($pagos_separados, $p->asXML() );
+                    $TotalPagos = $TotalPagos + $pago->Monto;
                 }
                 for ($i=0; $i < count($pagos_separados) ; $i++) {
                     
@@ -308,6 +347,7 @@
                         $pago->documentos = [];
                         array_push($pagos,$pago);
                         array_push($pagos_separados, $p->asXML() );
+                        $TotalPagos = $TotalPagos + $pago->Monto;
                     }
                     for ($i=0; $i < count($pagos_separados) ; $i++) {
                         
@@ -332,6 +372,7 @@
                         $CFDI->Complementos->Pagos = $pagos;
                     }
                 }
+                $CFDI->Complementos->Pagos->TotalPagos = $TotalPagos;
             }
             return $CFDI;
         }

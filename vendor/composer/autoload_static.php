@@ -7,6 +7,7 @@ namespace Composer\Autoload;
 class ComposerStaticInitc150de77394b5d3882696242ee923070
 {
     public static $files = array (
+        '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         'abede361264e2ae69ec1eee813a101af' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/abs.php',
         '21a5860fbef5be28db5ddfbc3cca67c4' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acos.php',
         '1546e3f9d127f2a9bb2d1b6c31c26ef1' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acosh.php',
@@ -76,12 +77,14 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
         'P' => 
         array (
             'Psr\\SimpleCache\\' => 16,
+            'Psr\\Log\\' => 8,
             'Psr\\Http\\Message\\' => 17,
             'Psr\\Container\\' => 14,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
         ),
         'M' => 
         array (
+            'Mpdf\\' => 5,
             'Matrix\\' => 7,
         ),
         'L' => 
@@ -96,6 +99,10 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
         array (
             'Firebase\\JWT\\' => 13,
             'FastRoute\\' => 10,
+        ),
+        'D' => 
+        array (
+            'DeepCopy\\' => 9,
         ),
         'C' => 
         array (
@@ -112,6 +119,10 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
         array (
             0 => __DIR__ . '/..' . '/psr/simple-cache/src',
         ),
+        'Psr\\Log\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
+        ),
         'Psr\\Http\\Message\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/http-message/src',
@@ -123,6 +134,10 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
         'PhpOffice\\PhpSpreadsheet\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpoffice/phpspreadsheet/src/PhpSpreadsheet',
+        ),
+        'Mpdf\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/mpdf/mpdf/src',
         ),
         'Matrix\\' => 
         array (
@@ -144,6 +159,10 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
         array (
             0 => __DIR__ . '/..' . '/nikic/fast-route/src',
         ),
+        'DeepCopy\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy',
+        ),
         'Complex\\' => 
         array (
             0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
@@ -160,12 +179,23 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
         ),
     );
 
+    public static $classMap = array (
+        'FPDF_TPL' => __DIR__ . '/..' . '/setasign/fpdi/fpdf_tpl.php',
+        'FPDI' => __DIR__ . '/..' . '/setasign/fpdi/fpdi.php',
+        'FilterASCII85' => __DIR__ . '/..' . '/setasign/fpdi/filters/FilterASCII85.php',
+        'FilterASCIIHexDecode' => __DIR__ . '/..' . '/setasign/fpdi/filters/FilterASCIIHexDecode.php',
+        'FilterLZW' => __DIR__ . '/..' . '/setasign/fpdi/filters/FilterLZW.php',
+        'fpdi_pdf_parser' => __DIR__ . '/..' . '/setasign/fpdi/fpdi_pdf_parser.php',
+        'pdf_context' => __DIR__ . '/..' . '/setasign/fpdi/pdf_context.php',
+    );
+
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitc150de77394b5d3882696242ee923070::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitc150de77394b5d3882696242ee923070::$prefixDirsPsr4;
             $loader->prefixesPsr0 = ComposerStaticInitc150de77394b5d3882696242ee923070::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitc150de77394b5d3882696242ee923070::$classMap;
 
         }, null, ClassLoader::class);
     }

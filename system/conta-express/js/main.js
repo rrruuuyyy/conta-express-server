@@ -98,8 +98,9 @@ function sendInfo() {
         processData: false,
         beforeSend: function() {},
         success: function(res) {
-            rest = JSON.parse(res)
-            console.log(rest)
+            rest = JSON.parse(res);
+            console.log(rest);
+            localStorage.setItem("usuario", JSON.stringify(res));
         }
     })
 }
