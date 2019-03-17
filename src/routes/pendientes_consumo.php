@@ -296,41 +296,69 @@ $app->post('/api/pendientes_consumo/cobrar', function(Request $request, Response
         echo json_encode($mensaje);
         return;
     }
-    $nombres = [];
     $idcliente = "";
-    $pdf = new pdfCreator();
-    $pdf = $pdf->PDF_cobro($pendientes->pendientes[$i],$folios,$hoy);
-    return;
-    for ($i=0; $i < count( $pendientes->pendientes ) ; $i++) {
-        $pdf = new pdfCreator();
-        $cobro = $pendientes->pendientes[$i];
-        $pdf = $pdf->PDF_cobro($pendientes->pendientes[$i],$folios,$hoy);
-        array_push($nombres,$pdf);
-        $pdf = null;
-        $folios->folio = $folios->folio + 1;
-        // $idcliente = $pendientes->pendientes[$i]->cliente->idcliente;
-        // $pendientes->pendientes[$i]->cliente = null;
-        // $borrar_pendiente = "DELETE FROM pendientes_cobro WHERE idpendientes_cobro = '{$cobro->idpendientes_cobro}' ";
-        // try{
-        //     // Get DB Object
-        //     $db = new db();
-        //     // Connect
-        //     $db = $db->connect();
-    
-        //     $stmt = $db->prepare($borrar_pendiente);
-        //     $stmt->execute();
-        //     $db = null;
-        // } catch(PDOException $e){
-        //     $mensaje = array(
-        //         'status' => false,
-        //         'mensaje' => 'Error al eliminar pendientes',
-        //         'error' => $e->getMessage()
-        //     );
-        //     echo json_encode($mensaje);
-        // }
+    // Componemos las fechas
+    for ($i=0; $i < count($pendientes->pendientes) ; $i++) {
+        $pendientes->pendientes[$i]->inicio_servicioC = date('d-m-Y',strtotime($pendientes->pendientes[$i]->inicio_servicio));
+        $pendientes->pendientes[$i]->fecha_pendienteC = date('d-m-Y',strtotime($pendientes->pendientes[$i]->fecha_pendiente));
+        $idcliente = $pendientes->pendientes[$i]->cliente->idcliente;
+        $pendientes->pendientes[$i]->cliente = $pendientes->pendientes[$i]->cliente->idcliente;
     }
-    echo json_encode($nombres);
-    return;
+    // Creamos el PDF y obtenemos el nombre del archivo
+    $pdf = new pdfCreator();
+    $pdf = $pdf->PDF_cobro($pendientes->pendientes,$folios,$hoy);
+    // Eliminamos informacion del cliente dentro de los cobros y eliminamos los pendientes de cobro
+    for ($i=0; $i < count($pendientes->pendientes) ; $i++) {
+        //Borramos los pendientes
+        $borrar_pendiente = "DELETE FROM pendientes_cobro WHERE idpendientes_cobro = '{$pendientes->pendientes[$i]->idpendientes_cobro}' ";
+        try{
+            // Get DB Object
+            $db = new db();
+            // Connect
+            $db = $db->connect();
+    
+            $stmt = $db->prepare($borrar_pendiente);
+            $stmt->execute();
+            $db = null;
+        } catch(PDOException $e){
+            $mensaje = array(
+                'status' => false,
+                'mensaje' => 'Error al eliminar pendientes',
+                'error' => $e->getMessage()
+            );
+            echo json_encode($mensaje);
+        }
+        //Creamos los recibos
+        //Guardamos los cobros realizados        
+    $sql_cobro = "INSERT INTO recibos (idusuario,idcliente,fecha_pendiente,inicio_servicio,importe,descripcion,periodicidad_pago) 
+    VALUES
+    (:idusuario,:idcliente,:fecha_pendiente,:inicio_servicio,:importe,:descripcion,:periodicidad_pago) ";
+    try{
+        // Get DB Object
+        $db = new db();
+        // Connect
+        $db = $db->connect();
+        $stmt = $db->prepare($sql_cobro);
+        $stmt->bindParam(':idusuario', $pendientes->idusuario);
+        $stmt->bindParam(':idcliente', $idcliente);
+        $stmt->bindParam(':fecha_pendiente', $pendientes->pendientes[$i]->fecha_pendiente );
+        $stmt->bindParam(':inicio_servicio', $pendientes->pendientes[$i]->inicio_servicio );
+        $stmt->bindParam(':importe', $pendientes->pendientes[$i]->importe );
+        $stmt->bindParam(':descripcion', $pendientes->pendientes[$i]->descripcion );
+        $stmt->bindParam(':periodicidad_pago', $pendientes->pendientes[$i]->periodicidad_pago );
+        $stmt->execute();
+
+    } catch(PDOException $e){
+        $mensaje = array(
+            'status' => false,
+            'mensaje' => 'Error al guardar cobro',
+            'error' => $e->getMessage()
+        );
+        echo json_encode($mensaje);
+        return;
+    }
+    }
+    // Actualizamos los folios ocupados
     $sql_folios = "UPDATE folios SET serie=:serie, folio=:folio WHERE idfolios = '{$folios->idfolios}'";
     try{
         // Get DB Object
@@ -352,12 +380,11 @@ $app->post('/api/pendientes_consumo/cobrar', function(Request $request, Response
     }
     $hoy = new DateTime("",new DateTimeZone('America/Mexico_City'));
     $hoy = date_format($hoy, 'Y/m/d');
-    $nombres = json_encode($nombres);
     $pend = json_encode($pendientes->pendientes );
     //Guardamos los cobros realizados        
-    $sql_cobro = "INSERT INTO cobros (idusuario,idcliente,nombres_archivos,importe,forma_pago,cuenta,fecha_pago,fecha_creacion,cobros) 
+    $sql_cobro = "INSERT INTO cobros (idusuario,idcliente,archivo_pdf,importe,forma_pago,cuenta,fecha_pago,fecha_creacion,cobros) 
     VALUES
-    (:idusuario,:idcliente,:nombres_archivos,:importe,:forma_pago,:cuenta,:fecha_pago,:fecha_creacion,:cobros) ";
+    (:idusuario,:idcliente,:archivo_pdf,:importe,:forma_pago,:cuenta,:fecha_pago,:fecha_creacion,:cobros) ";
     try{
         // Get DB Object
         $db = new db();
@@ -366,7 +393,7 @@ $app->post('/api/pendientes_consumo/cobrar', function(Request $request, Response
         $stmt = $db->prepare($sql_cobro);
         $stmt->bindParam(':idusuario', $pendientes->idusuario);
         $stmt->bindParam(':idcliente', $idcliente);
-        $stmt->bindParam(':nombres_archivos', $nombres );
+        $stmt->bindParam(':archivo_pdf', $pdf );
         $stmt->bindParam(':importe', $pendientes->importe );
         $stmt->bindParam(':forma_pago', $pendientes->forma_pago );
         $stmt->bindParam(':cuenta', $pendientes->cuenta );
@@ -384,11 +411,10 @@ $app->post('/api/pendientes_consumo/cobrar', function(Request $request, Response
         echo json_encode($mensaje);
         return;
     }
-    $nombres = json_decode($nombres);
     $mensaje = array(
         'status' => true,
         'mensaje' => 'Pendientes cobrados satisfactoriamente',
-        'rest' => $nombres
+        'rest' => $pdf
     );
     echo json_encode($mensaje);
 });

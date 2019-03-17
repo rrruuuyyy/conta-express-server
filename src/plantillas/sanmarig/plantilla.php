@@ -11,6 +11,9 @@
 </head>
 
 <body>
+<?php for ($i=0; $i < count($cobro) ; $i++) { 
+    # code...
+?>
     <div class="div_carta" style="width: 100%; height: 50%;; padding: 0mm">
         <div class="cabeza" style="width: 100%; ">
             <div style=" float:left; width: 15%; padding-top: 8px ">
@@ -43,10 +46,10 @@ sanmarig@hotmail.com
         </div>
         <div style=" padding-left: 30px; padding-right:30px;overflow: auto; margin-top: 5px; margin-bottom: 15px">
             <div style=" width: 50% " class="folio ">FOLIO: <?php echo "{$folios->serie} {$folios->folio}"?></div>
-            <div style="width: 50% " class="bueno_por ">BUENO POR $ <?php echo number_format($cobro->importe,2,".",","); ?></div>
+            <div style="width: 50% " class="bueno_por ">BUENO POR $ <?php echo number_format($cobro[$i]->importe,2,".",","); ?></div>
         </div>
         <div class="cuerpo ">
-            RECIBI DE <?php $str = strtoupper($cobro->cliente->nombre); echo $str ?> LA CANTIDAD DE ( <?php $numero_en_letras = new conversorNumero();$numero_en_letras = $numero_en_letras->conversor($cobro->importe); echo $numero_en_letras; ?> ) POR CONCEPTO DE HONORARIOS POR <?php echo strtoupper($cobro->descripcion) ?> CORRESPONDIENTES DEL <?php echo "{$cobro->inicio_servicio} AL {$cobro->fecha_pendiente}" ?>
+            RECIBI DE <?php $str = strtoupper($cobro[$i]->cliente->nombre); echo $str ?> LA CANTIDAD DE ( <?php $numero_en_letras = new conversorNumero();$numero_en_letras = $numero_en_letras->conversor($cobro[$i]->importe); echo $numero_en_letras; ?> ) POR CONCEPTO DE HONORARIOS POR <?php echo strtoupper($cobro[$i]->descripcion) ?> CORRESPONDIENTES DEL <?php echo "{$cobro[$i]->inicio_servicioC} AL {$cobro[$i]->fecha_pendienteC}" ?>
         </div>
         <div class="fecha">
             POCHUTLA, OAX. A <?php echo $hoy ?>
@@ -57,7 +60,9 @@ sanmarig@hotmail.com
             </div>
         </div>
     </div>
-    
+<?php
+$folios->folio = $folios->folio + 1;
+} ?>
 </body>
 
 </html>
