@@ -71,6 +71,7 @@ $app->post('/api/xml/tablas-egreso', function(Request $request, Response $respon
 							$info->Receptor = json_decode($info->Receptor);
 							$info->Conceptos = json_decode($info->Conceptos);
 							$info->Complementos = json_decode($info->Complementos);
+							$info->Impuestos = json_decode($info->Impuestos);
 							$info->estado = 'viejo';
 							break;
 						}else{
@@ -160,6 +161,7 @@ $app->post('/api/xml/tablas-ingreso', function(Request $request, Response $respo
 							$info->Receptor = json_decode($info->Receptor);
 							$info->Conceptos = json_decode($info->Conceptos);
 							$info->Complementos = json_decode($info->Complementos);
+							$info->Impuestos = json_decode($info->Impuestos);
 							$info->estado = 'viejo';
 							$info->conta = 'ingreso';
 							break;
@@ -199,9 +201,9 @@ $app->post('/api/xml/upload', function(Request $request, Response $response){
 		if($xmls[$i]->estado != "error"){
 			if($xmls[$i]->estado === "nuevo"){
 				$sql = "INSERT INTO `docto-xml` 
-	(idcliente,idusuario,TipoDeComprobante,Serie,Folio,FormaPago,Subtotal,Total,Moneda,TipoCambio,MetodoPago,LugarExpedicion,Conceptos,Impuestos,Complementos, Fecha,UUID,deducible,estado,UUIDS_relacionados,Emisor,Receptor,conta,TotalGravado,TotalExento,Descuento) 
+	(idcliente,idusuario,TipoDeComprobante,Serie,Folio,FormaPago,SubTotal,Total,Moneda,TipoCambio,MetodoPago,LugarExpedicion,Conceptos,Impuestos,Complementos, Fecha,UUID,deducible,estado,UUIDS_relacionados,Emisor,Receptor,conta,TotalGravado,TotalExento,Descuento,TotalImpuestosRetenidos,TotalImpuestosTrasladados) 
 	values 
-	(:idcliente,:idusuario,:TipoDeComprobante,:Serie,:Folio,:FormaPago,:Subtotal,:Total,:Moneda,:TipoCambio,:MetodoPago,:LugarExpedicion,:Conceptos,:Impuestos,:Complementos,:Fecha,:UUID,:deducible,:estado,:UUIDS_relacionados,:Emisor,:Receptor,:conta,:TotalGravado,:TotalExento,:Descuento) " ;
+	(:idcliente,:idusuario,:TipoDeComprobante,:Serie,:Folio,:FormaPago,:SubTotal,:Total,:Moneda,:TipoCambio,:MetodoPago,:LugarExpedicion,:Conceptos,:Impuestos,:Complementos,:Fecha,:UUID,:deducible,:estado,:UUIDS_relacionados,:Emisor,:Receptor,:conta,:TotalGravado,:TotalExento,:Descuento,:TotalImpuestosRetenidos,:TotalImpuestosTrasladados) " ;
 				try{
 					$conceptos = json_encode($xmls[$i]->Conceptos);
 					$impuestos = json_encode($xmls[$i]->Impuestos);
@@ -220,7 +222,7 @@ $app->post('/api/xml/upload', function(Request $request, Response $response){
 					$stmt->bindParam(':Serie', $xmls[$i]->Serie);
 					$stmt->bindParam(':Folio', $xmls[$i]->Folio);
 					$stmt->bindParam(':FormaPago', $xmls[$i]->FormaPago);
-					$stmt->bindParam(':Subtotal', $xmls[$i]->SubTotal);
+					$stmt->bindParam(':SubTotal', $xmls[$i]->SubTotal);
 					$stmt->bindParam(':Total', $xmls[$i]->Total);
 					$stmt->bindParam(':Moneda', $xmls[$i]->Moneda);
 					$stmt->bindParam(':TipoCambio', $xmls[$i]->TipoCambio);
@@ -240,6 +242,8 @@ $app->post('/api/xml/upload', function(Request $request, Response $response){
 					$stmt->bindParam(':TotalGravado', $xmls[$i]->TotalGravado);
 					$stmt->bindParam(':TotalExento', $xmls[$i]->TotalExento);
 					$stmt->bindParam(':Descuento', $xmls[$i]->Descuento);
+					$stmt->bindParam(':TotalImpuestosRetenidos', $xmls[$i]->TotalImpuestosRetenidos);
+					$stmt->bindParam(':TotalImpuestosTrasladados', $xmls[$i]->TotalImpuestosTrasladados);
 					$stmt->execute();
 			
 				} catch(PDOException $e){
@@ -435,6 +439,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 			],
 		],
 	];
+	$mesSave = $mes;
 	$mes = obtenerMes($mes);
 		// libro de ingresos
 	$base = 32;
@@ -894,7 +899,11 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 							$sheet->setCellValue('M'.$num , "{$xmls_egreso[$i]->Total}" );
 						}
 						if($xmls_egreso[$i]->TipoDeComprobante === "P"){
-							$sheet->setCellValue('N'.$num , "{$xmls_egreso[$i]->Complementos->TotalPagos}" );
+							$Monto = 0;
+							for ($s=0; $s < count($xmls_egreso[$i]->Complementos->Pagos) ; $s++) {
+								$Monto = $Monto + $xmls_egreso[$i]->Complementos->Pagos[$s]->Monto;
+							}
+							$sheet->setCellValue('N'.$num , "{$Monto}" );
 						}
 						if( $xmls_egreso[$i]->TipoDeComprobante === "N" ){
 
@@ -954,7 +963,11 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 						$sheet->setCellValue('M'.$num , "{$xmls_egreso[$i]->Total}" );
 					}
 					if($xmls_egreso[$i]->TipoDeComprobante === "P"){
-						$sheet->setCellValue('N'.$num , "{$xmls_egreso[$i]->Complementos->TotalPagos}" );
+						$Monto = 0;
+						for ($s=0; $s < count($xmls_egreso[$i]->Complementos->Pagos) ; $s++) {
+							$Monto = $Monto + $xmls_egreso[$i]->Complementos->Pagos[$s]->Monto;
+						}
+						$sheet->setCellValue('N'.$num , "{$Monto}" );
 					}
 					if( $xmls_egreso[$i]->TipoDeComprobante === "N" ){
 
@@ -998,17 +1011,44 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 	// Fin para el libro de Egresos
 	$spreadsheet->setActiveSheetIndex(0);
 	$writer = new Xlsx($spreadsheet);
-	$name = "Ingresos_Egresos_".$cliente['nombre'].".xlsx";
-	$writer->save($name);
-	$mensaje = array(
-		'status' => true,
-		'mensaje' => 'Archivo creado',
-		'rest' => $name
-	);
-	$carpeta = "/docs";
+	$nombre_archivo = "Ingresos_Egresos_{$mes}_{$year}".$cliente['nombre'];
+	$name = $nombre_archivo.".xlsx";
+	$carpeta = 'calculos' ;
 	if (!file_exists($carpeta)) {
 		mkdir($carpeta, 0777, true);
 	}
+	$writer->save("{$carpeta}/{$name}");
+	$sql = "INSERT INTO documento 
+	(idusuario,idcliente,nombre_archivo,mes,year)
+	VALUES
+	(:idusuario,:idcliente,:nombre_archivo,:mes,:year)";
+	try{
+        // Get DB Object
+        $db = new db();
+        // Connect
+        $db = $db->connect();
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':idusuario', $idusuario);
+        $stmt->bindParam(':idcliente', $idcliente);
+        $stmt->bindParam(':nombre_archivo', $nombre_archivo);
+        $stmt->bindParam(':mes', $mes);
+        $stmt->bindParam(':year', $year);
+        $stmt->execute();
+
+    } catch(PDOException $e){
+        $mensaje = array(
+            'status' => false,
+            'mensaje' => 'Error al guardar documento',
+            'error' => $e->getMessage()
+        );
+        echo json_encode($mensaje);
+        return;
+    }
+	$mensaje = array(
+		'status' => true,
+		'mensaje' => 'Archivo creado',
+		'rest' => $nombre_archivo
+	);
 	echo json_encode($mensaje);
 });
 

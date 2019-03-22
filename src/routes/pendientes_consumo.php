@@ -301,14 +301,14 @@ $app->post('/api/pendientes_consumo/cobrar', function(Request $request, Response
     for ($i=0; $i < count($pendientes->pendientes) ; $i++) {
         $pendientes->pendientes[$i]->inicio_servicioC = date('d-m-Y',strtotime($pendientes->pendientes[$i]->inicio_servicio));
         $pendientes->pendientes[$i]->fecha_pendienteC = date('d-m-Y',strtotime($pendientes->pendientes[$i]->fecha_pendiente));
-        $idcliente = $pendientes->pendientes[$i]->cliente->idcliente;
-        $pendientes->pendientes[$i]->cliente = $pendientes->pendientes[$i]->cliente->idcliente;
     }
     // Creamos el PDF y obtenemos el nombre del archivo
     $pdf = new pdfCreator();
     $pdf = $pdf->PDF_cobro($pendientes->pendientes,$folios,$hoy);
     // Eliminamos informacion del cliente dentro de los cobros y eliminamos los pendientes de cobro
     for ($i=0; $i < count($pendientes->pendientes) ; $i++) {
+        $idcliente = $pendientes->pendientes[$i]->cliente->idcliente;
+        $pendientes->pendientes[$i]->cliente = $pendientes->pendientes[$i]->cliente->idcliente;
         //Borramos los pendientes
         $borrar_pendiente = "DELETE FROM pendientes_cobro WHERE idpendientes_cobro = '{$pendientes->pendientes[$i]->idpendientes_cobro}' ";
         try{
@@ -330,9 +330,11 @@ $app->post('/api/pendientes_consumo/cobrar', function(Request $request, Response
         }
         //Creamos los recibos
         //Guardamos los cobros realizados        
-    $sql_cobro = "INSERT INTO recibos (idusuario,idcliente,fecha_pendiente,inicio_servicio,importe,descripcion,periodicidad_pago) 
+    $hoy = new DateTime("",new DateTimeZone('America/Mexico_City'));
+    $hoy = date_format($hoy, 'Y/m/d');
+    $sql_cobro = "INSERT INTO recibos (idusuario,idcliente,fecha_pendiente,inicio_servicio,importe,descripcion,periodicidad_pago,creado) 
     VALUES
-    (:idusuario,:idcliente,:fecha_pendiente,:inicio_servicio,:importe,:descripcion,:periodicidad_pago) ";
+    (:idusuario,:idcliente,:fecha_pendiente,:inicio_servicio,:importe,:descripcion,:periodicidad_pago,:creado) ";
     try{
         // Get DB Object
         $db = new db();
@@ -346,6 +348,7 @@ $app->post('/api/pendientes_consumo/cobrar', function(Request $request, Response
         $stmt->bindParam(':importe', $pendientes->pendientes[$i]->importe );
         $stmt->bindParam(':descripcion', $pendientes->pendientes[$i]->descripcion );
         $stmt->bindParam(':periodicidad_pago', $pendientes->pendientes[$i]->periodicidad_pago );
+        $stmt->bindParam(':creado', $hoy );
         $stmt->execute();
 
     } catch(PDOException $e){
