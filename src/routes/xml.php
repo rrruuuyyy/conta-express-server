@@ -26,7 +26,6 @@ $app->post('/api/xml/tablas-egreso', function(Request $request, Response $respon
 		try{
 			// Instanciar la base de datos
 			$db = new db();
-
 			// Conexión
 			$db = $db->connect();
 			$ejecutar = $db->query($sql);
@@ -116,7 +115,6 @@ $app->post('/api/xml/tablas-ingreso', function(Request $request, Response $respo
 	try{
 		// Instanciar la base de datos
 		$db = new db();
-
 		// Conexión
 		$db = $db->connect();
 		$ejecutar = $db->query($sql);
@@ -165,6 +163,10 @@ $app->post('/api/xml/tablas-ingreso', function(Request $request, Response $respo
 							$info->estado = 'viejo';
 							$info->conta = 'ingreso';
 							break;
+						}else{
+							$info->estado = 'nuevo';
+							$info->deducible = 'si';
+							$info->conta = 'ingreso';
 						}
 						
 					}
@@ -201,9 +203,9 @@ $app->post('/api/xml/upload', function(Request $request, Response $response){
 		if($xmls[$i]->estado != "error"){
 			if($xmls[$i]->estado === "nuevo"){
 				$sql = "INSERT INTO `docto-xml` 
-	(idcliente,idusuario,TipoDeComprobante,Serie,Folio,FormaPago,SubTotal,Total,Moneda,TipoCambio,MetodoPago,LugarExpedicion,Conceptos,Impuestos,Complementos, Fecha,UUID,deducible,estado,UUIDS_relacionados,Emisor,Receptor,conta,TotalGravado,TotalExento,Descuento,TotalImpuestosRetenidos,TotalImpuestosTrasladados) 
+	(idcliente,idusuario,TipoDeComprobante,Serie,Folio,FormaPago,SubTotal,Total,Moneda,TipoCambio,MetodoPago,LugarExpedicion,Conceptos,Impuestos,Complementos, Fecha,UUID,deducible,estado,UUIDS_relacionados,Emisor,Receptor,conta,TotalGravado,TotalExento,Descuento,TotalImpuestosRetenidos,TotalImpuestosTrasladados,Otros) 
 	values 
-	(:idcliente,:idusuario,:TipoDeComprobante,:Serie,:Folio,:FormaPago,:SubTotal,:Total,:Moneda,:TipoCambio,:MetodoPago,:LugarExpedicion,:Conceptos,:Impuestos,:Complementos,:Fecha,:UUID,:deducible,:estado,:UUIDS_relacionados,:Emisor,:Receptor,:conta,:TotalGravado,:TotalExento,:Descuento,:TotalImpuestosRetenidos,:TotalImpuestosTrasladados) " ;
+	(:idcliente,:idusuario,:TipoDeComprobante,:Serie,:Folio,:FormaPago,:SubTotal,:Total,:Moneda,:TipoCambio,:MetodoPago,:LugarExpedicion,:Conceptos,:Impuestos,:Complementos,:Fecha,:UUID,:deducible,:estado,:UUIDS_relacionados,:Emisor,:Receptor,:conta,:TotalGravado,:TotalExento,:Descuento,:TotalImpuestosRetenidos,:TotalImpuestosTrasladados,:Otros) " ;
 				try{
 					$conceptos = json_encode($xmls[$i]->Conceptos);
 					$impuestos = json_encode($xmls[$i]->Impuestos);
@@ -211,6 +213,7 @@ $app->post('/api/xml/upload', function(Request $request, Response $response){
 					$Emisor = json_encode($xmls[$i]->Emisor);
 					$Receptor = json_encode($xmls[$i]->Receptor);
 					$uuids_relacionados = json_encode($xmls[$i]->UUIDS_relacionados);
+					$Otros = json_encode($xmls[$i]->Otros);
 					// Get DB Object
 					$db = new db();
 					// Connect
@@ -244,6 +247,7 @@ $app->post('/api/xml/upload', function(Request $request, Response $response){
 					$stmt->bindParam(':Descuento', $xmls[$i]->Descuento);
 					$stmt->bindParam(':TotalImpuestosRetenidos', $xmls[$i]->TotalImpuestosRetenidos);
 					$stmt->bindParam(':TotalImpuestosTrasladados', $xmls[$i]->TotalImpuestosTrasladados);
+					$stmt->bindParam(':Otros', $Otros);
 					$stmt->execute();
 			
 				} catch(PDOException $e){
@@ -323,7 +327,6 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 	try{
 		// Instanciar la base de datos
 		$db = new db();
-
 		// Conexión
 		$db = $db->connect();
 		$ejecutar = $db->query($sql_ingreso);
@@ -341,7 +344,6 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 	try{
 		// Instanciar la base de datos
 		$db = new db();
-
 		// Conexión
 		$db = $db->connect();
 		$ejecutar = $db->query($sql_egreso);
@@ -371,7 +373,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 			$xmls_ingreso[$i]->Complementos = json_decode($xmls_ingreso[$i]->Complementos);
 		}
 	}
-	for ($i=0; $i < count($array_split) ; $i++) { 
+	for ($i=count($array_split)-1; $i >= 0 ; $i--) { 
 		array_splice($xmls_ingreso,$array_split[$i],1);
 	}
 	for ($i=0; $i < count($xmls_egreso) ; $i++) { 
@@ -381,6 +383,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 		$xmls_egreso[$i]->Conceptos = json_decode($xmls_egreso[$i]->Conceptos);
 		$xmls_egreso[$i]->Impuestos = json_decode($xmls_egreso[$i]->Impuestos);
 		$xmls_egreso[$i]->Complementos = json_decode($xmls_egreso[$i]->Complementos);
+		$xmls_egreso[$i]->Otros = json_decode($xmls_egreso[$i]->Otros);
 	}
 	
 	$spreadsheet = new Spreadsheet();
@@ -476,10 +479,16 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 		$spreadsheet->getActiveSheet()->mergeCells('L4:L5');
 		$sheet->setCellValue('L4', "Credito o devoluciones" );
 		$spreadsheet->getActiveSheet()->mergeCells('M4:M5');
-		$sheet->setCellValue('M4', "Total" );
+		$sheet->setCellValue('M4', "Pagos" );
+		$spreadsheet->getActiveSheet()->mergeCells('N4:O4');
+		$sheet->setCellValue('N4', "Imp. Locales" );
+		$sheet->setCellValue('N5', "Trasl" );
+		$sheet->setCellValue('O5', "Reten" );
+		$spreadsheet->getActiveSheet()->mergeCells('P4:P5');
+		$sheet->setCellValue('P4', "Total" );
 		
-		$spreadsheet->getActiveSheet()->getStyle('A4:M4')->applyFromArray($styleCabeceraTabla);
-		$spreadsheet->getActiveSheet()->getStyle('A5:M5')->applyFromArray($styleCabeceraTabla);
+		$spreadsheet->getActiveSheet()->getStyle('A4:P4')->applyFromArray($styleCabeceraTabla);
+		$spreadsheet->getActiveSheet()->getStyle('A5:P5')->applyFromArray($styleCabeceraTabla);
 		// El siguiente codigo agrega a las filas que se ajusten al tamaño de su contenido
 		$spreadsheet->getActiveSheet()->getColumnDimension('B')->setWidth(47);
 		// $spreadsheet->getActiveSheet()->getColumnDimension('B')->setAutoSize(true);
@@ -494,6 +503,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 		$spreadsheet->getActiveSheet()->getColumnDimension('K')->setAutoSize(true);
 		$spreadsheet->getActiveSheet()->getStyle('L4')->getAlignment()->setWrapText(true);
 		$spreadsheet->getActiveSheet()->getColumnDimension('M')->setAutoSize(true);
+		$spreadsheet->getActiveSheet()->getColumnDimension('N')->setAutoSize(true);
 		$num = 6;
 		$start = 6;
 		$limite = 42;
@@ -506,12 +516,11 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 			$aux[$key] = (int)$row->Folio;
 		}
 		array_multisort($aux, SORT_ASC, $xmls_ingreso);
-
 		for ($i=0; $i < count($xmls_ingreso) ; $i++) {
 			if($num === $limite){
 				// if ($hoja === 1) {
 					$final = $limite  - 1;
-					$spreadsheet->getActiveSheet()->getStyle("C{$start}:M{$limite}")->getNumberFormat()->setFormatCode('#,##0.00');
+					$spreadsheet->getActiveSheet()->getStyle("C{$start}:N{$limite}")->getNumberFormat()->setFormatCode('#,##0.00');
 					# code...
 					$sheet->setCellValue("B{$limite}" , "INGRESOS TOTALES" );
 					$sheet->setCellValue("C{$limite}" , "=SUM(C{$start}:C{$limite})" );
@@ -525,8 +534,11 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 					$sheet->setCellValue("K{$limite}" , "=SUM(K{$start}:K{$limite})" );
 					$sheet->setCellValue("L{$limite}" , "=SUM(L{$start}:L{$limite})" );
 					$sheet->setCellValue("M{$limite}" , "=SUM(M{$start}:M{$limite})" );
-					$spreadsheet->getActiveSheet()->getStyle("A{$limite}:M{$limite}")->getBorders()->getOutline()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-					$spreadsheet->getActiveSheet()->getStyle("A{$start}:M{$limite}")->applyFromArray($styleCuerpoTabla);
+					$sheet->setCellValue("N{$limite}" , "=SUM(N{$start}:N{$limite})" );
+					$sheet->setCellValue("O{$limite}" , "=SUM(O{$start}:O{$limite})" );
+					$sheet->setCellValue("P{$limite}" , "=SUM(P{$start}:P{$limite})" );
+					$spreadsheet->getActiveSheet()->getStyle("A{$limite}:P{$limite}")->getBorders()->getOutline()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+					$spreadsheet->getActiveSheet()->getStyle("A{$start}:P{$limite}")->applyFromArray($styleCuerpoTabla);
 					$num++;
 					$hoja++;
 					$sheet->setCellValue("A{$num}", strtoupper($cliente['nombre']) );
@@ -534,7 +546,6 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 					$num++;
 					$sheet->setCellValue("A{$num}", strtoupper("Ingresos correspondientes al mes de {$mes} del {$year}") ); 
 					$num++;
-
 					$num++;
 					$help = $num + 1;
 					
@@ -563,11 +574,16 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 					$spreadsheet->getActiveSheet()->mergeCells("L{$num}:L{$help}");
 					$sheet->setCellValue("L{$num}", "Credito o devoluciones" );
 					$spreadsheet->getActiveSheet()->mergeCells("M{$num}:M{$help}");
-					$sheet->setCellValue("M{$num}", "Total" );
-					$spreadsheet->getActiveSheet()->getStyle("A{$num}:M{$help}")->applyFromArray($styleCabeceraTabla);
+					$sheet->setCellValue("M{$num}", "Pagos" );
+					$spreadsheet->getActiveSheet()->mergeCells("N{$num}:O{$num}");
+					$sheet->setCellValue("N{$num}", "Imp. Locales" );
+					$sheet->setCellValue("N{$help}", "Trasl" );
+					$sheet->setCellValue("O{$help}", "Reten" );
+					$spreadsheet->getActiveSheet()->mergeCells("P{$num}:P{$help}");
+					$sheet->setCellValue("P{$num}", "Total" );
+
+					$spreadsheet->getActiveSheet()->getStyle("A{$num}:P{$help}")->applyFromArray($styleCabeceraTabla);
 					$num++;
-
-
 					$num++;
 					$help = $num + 1;
 					$start = $num;
@@ -584,50 +600,82 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 					$sheet->setCellValue("K{$num}" , "=K{$datos}" );
 					$sheet->setCellValue("L{$num}" , "=L{$datos}" );
 					$sheet->setCellValue("M{$num}" , "=M{$datos}" );
+					$sheet->setCellValue("N{$num}" , "=N{$datos}" );
+					$sheet->setCellValue("O{$num}" , "=O{$datos}" );
+					$sheet->setCellValue("P{$num}" , "=P{$datos}" );
 					$num++;
 					// <---------------------------------------Empezamos en la siguiente hoja ------------------------------------>
 					// <------------------- Comenzamos --------------------->
+					$sheet->setCellValue("C{$num}" , 0 );
+					$sheet->setCellValue("D{$num}" , 0 );
+					$sheet->setCellValue("E{$num}" , 0 );
+					$sheet->setCellValue("F{$num}" , 0 );
+					$sheet->setCellValue("G{$num}" , 0 );
+					$sheet->setCellValue("H{$num}" , 0 );
+					$sheet->setCellValue("I{$num}" , 0 );
+					$sheet->setCellValue("J{$num}" , 0 );
+					$sheet->setCellValue("K{$num}" , 0 );
+					$sheet->setCellValue("L{$num}" , 0 );
+					$sheet->setCellValue("M{$num}" , 0 );
+					$sheet->setCellValue("N{$num}" , 0 );
+					$sheet->setCellValue("O{$num}" , 0 );
+					$sheet->setCellValue("P{$num}" , 0 );
 					$sheet->setCellValue('A'.$num , "{$xmls_ingreso[$i]->Folio}" );
 					$sheet->setCellValue('B'.$num , mb_convert_case("{$xmls_ingreso[$i]->Receptor->Nombre}", MB_CASE_TITLE, "UTF-8")  );
 					// <----------Detectamos si el MetodoDePago es PPD
-					if( $xmls_ingreso[$i]->MetodoPago === "PPD" ){
-						//16%
-						$sheet->setCellValue('F'.$num , "{$xmls_ingreso[$i]->TotalGravado}" );
-						//0%
-						$sheet->setCellValue('G'.$num , "{$xmls_ingreso[$i]->TotalExento}" );
-					}
-					// <------------------- Si es ventas al publico en general -------------------------->
-					if( $xmls_ingreso[$i]->Receptor->Rfc === "XAXX010101000" ){
-						$subtotal = $xmls_ingreso[$i]->TotalGravado + $xmls_ingreso[$i]->TotalExento;
-						$sheet->setCellValue('C'.$num , "{$subtotal}" );
-					}
 					if($xmls_ingreso[$i]->TipoDeComprobante === "E"){
 						$sheet->setCellValue('L'.$num , "{$xmls_ingreso[$i]->Total}" );
 					}else{
-						//16%
-						$sheet->setCellValue('D'.$num , "{$xmls_ingreso[$i]->TotalGravado}" );
-						//0%
-						$sheet->setCellValue('E'.$num , "{$xmls_ingreso[$i]->TotalExento}" );
+						// CODIGO SI EL TIPO DE COMPROBANTE ES INGRESO
+						// <----------Detectamos si el MetodoDePago es PPD
+						if( $xmls_ingreso[$i]->MetodoPago === "PPD" ){
+							//16%
+							$sheet->setCellValue('F'.$num , "{$xmls_ingreso[$i]->TotalGravado}" );
+							//0%
+							$sheet->setCellValue('G'.$num , "{$xmls_ingreso[$i]->TotalExento}" );
+						}else{
+							// <------------------- Si es ventas al publico en general -------------------------->
+							if($xmls_ingreso[$i]->TipoDeComprobante === "I"){
+								if( $xmls_ingreso[$i]->Receptor->Rfc === "XAXX010101000" ){
+									$subtotal = $xmls_ingreso[$i]->TotalGravado + $xmls_ingreso[$i]->TotalExento;
+									$sheet->setCellValue('C'.$num , "{$subtotal}" );
+								}else{
+									//SI NO ES EN PARCIALIDADES SE VA A LA DE CLIENTE
+									//16%
+									$sheet->setCellValue('D'.$num , "{$xmls_ingreso[$i]->TotalGravado}" );
+									//0%
+									$sheet->setCellValue('E'.$num , "{$xmls_ingreso[$i]->TotalExento}" );
+								}
+							}
+						}
 					}
-
-					if($xmls_ingreso[$i]->Impuestos->Retenciones != []){
-						$sheet->setCellValue('H'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalRetencionIVA}" );
-						$sheet->setCellValue('I'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalRetencionISR}" );
+					if($xmls_ingreso[$i]->TipoDeComprobante === "E" OR $xmls_ingreso[$i]->TipoDeComprobante === "I"){
+						if($xmls_ingreso[$i]->Impuestos->Retenciones != []){
+							$sheet->setCellValue('H'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalRetencionIVA}" );
+							$sheet->setCellValue('I'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalRetencionISR}" );
+						}
+						if($xmls_ingreso[$i]->Impuestos->Traslados != []){
+							$sheet->setCellValue('J'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalTrasladoIVA}" );
+							$sheet->setCellValue('K'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalTrasladoIEPS}" );
+						}
+						$sheet->setCellValue('N'.$num , "{$xmls_ingreso[$i]->Impuestos->TotaldeTrasladosLoc}" );
+						$sheet->setCellValue('O'.$num , "{$xmls_ingreso[$i]->Impuestos->TotaldeRetencionesLoc}" );
 					}
-					if($xmls_ingreso[$i]->Impuestos->Traslados != []){
-						$sheet->setCellValue('J'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalTrasladoIVA}" );
-						$sheet->setCellValue('K'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalTrasladoIEPS}" );
+					if($xmls_ingreso[$i]->TipoDeComprobante === "P"){
+						$Monto = 0;
+						for ($s=0; $s < count($xmls_ingreso[$i]->Complementos->Pagos) ; $s++) {
+							$Monto = $Monto + $xmls_ingreso[$i]->Complementos->Pagos[$s]->Monto;
+						}
+						$sheet->setCellValue('M'.$num , "{$Monto}" );
 					}
-					$sheet->setCellValue('M'.$num , "=sum(C{$num}:K{$num})-L{$num}" );
+					$sheet->setCellValue('P'.$num , "=sum(C{$num}:K{$num})-L{$num}+ sum(M{$num}:O{$num})" );
 					// <------------------------------ Detector de errores en estructura de XMLS ------------------------------>
-					// $sheet->setCellValue('M'.$num , "{$xmls_ingreso[$i]->Total}" );
+					$sheet->setCellValue('Q'.$num , "{$xmls_ingreso[$i]->Total}" );
 					
 					// $hoja++;
 					$num++;
 					$limite = $limite + $rango;
-
 				// }else{
-
 				// }
 			}else{
 				// <------------------------------------Comienzo de la hoja de calculo --------------------------------------------------------------->
@@ -642,43 +690,57 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 				$sheet->setCellValue("K{$num}" , 0 );
 				$sheet->setCellValue("L{$num}" , 0 );
 				$sheet->setCellValue("M{$num}" , 0 );
+				$sheet->setCellValue("N{$num}" , 0 );
+				$sheet->setCellValue("O{$num}" , 0 );
+				$sheet->setCellValue("P{$num}" , 0 );
 				// <------------------- Comenzamos --------------------->
 				$sheet->setCellValue('A'.$num , "{$xmls_ingreso[$i]->Folio}" );
 				$sheet->setCellValue('B'.$num , mb_convert_case("{$xmls_ingreso[$i]->Receptor->Nombre}", MB_CASE_TITLE, "UTF-8")  );
 				// <----------Detectamos si el MetodoDePago es PPD
-				if( $xmls_ingreso[$i]->MetodoPago === "PPD" ){
-					//16%
-					$sheet->setCellValue('F'.$num , "{$xmls_ingreso[$i]->TotalGravado}" );
-					//0%
-					$sheet->setCellValue('G'.$num , "{$xmls_ingreso[$i]->TotalExento}" );
-				}
-				// <------------------- Si es ventas al publico en general -------------------------->
-				if( $xmls_ingreso[$i]->Receptor->Rfc === "XAXX010101000" ){
-					$subtotal = $xmls_ingreso[$i]->TotalGravado + $xmls_ingreso[$i]->TotalExento;
-					$sheet->setCellValue('C'.$num , "{$subtotal}" );
-				}
 				if($xmls_ingreso[$i]->TipoDeComprobante === "E"){
 					$sheet->setCellValue('L'.$num , "{$xmls_ingreso[$i]->Total}" );
 				}else{
-					//16%
-					$sheet->setCellValue('D'.$num , "{$xmls_ingreso[$i]->TotalGravado}" );
-					//0%
-					$sheet->setCellValue('E'.$num , "{$xmls_ingreso[$i]->TotalExento}" );
-
+					// CODIGO SI EL TIPO DE COMPROBANTE ES INGRESO
+					// <----------Detectamos si el MetodoDePago es PPD
+					if( $xmls_ingreso[$i]->MetodoPago === "PPD" ){
+						//16%
+						$sheet->setCellValue('F'.$num , "{$xmls_ingreso[$i]->TotalGravado}" );
+						//0%
+						$sheet->setCellValue('G'.$num , "{$xmls_ingreso[$i]->TotalExento}" );
+					}else{
+						// <------------------- Si es ventas al publico en general -------------------------->
+						if($xmls_ingreso[$i]->TipoDeComprobante === "I"){
+							if( $xmls_ingreso[$i]->Receptor->Rfc === "XAXX010101000" ){
+								$subtotal = $xmls_ingreso[$i]->TotalGravado + $xmls_ingreso[$i]->TotalExento;
+								$sheet->setCellValue('C'.$num , "{$subtotal}" );
+							}else{
+								//SI NO ES EN PARCIALIDADES SE VA A LA DE CLIENTE
+								//16%
+								$sheet->setCellValue('D'.$num , "{$xmls_ingreso[$i]->TotalGravado}" );
+								//0%
+								$sheet->setCellValue('E'.$num , "{$xmls_ingreso[$i]->TotalExento}" );
+							}
+						}
+					}
 				}
-
-
-				if($xmls_ingreso[$i]->Impuestos->Retenciones != []){
+				if($xmls_ingreso[$i]->TipoDeComprobante === "E" OR $xmls_ingreso[$i]->TipoDeComprobante === "I"){					
 					$sheet->setCellValue('H'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalRetencionIVA}" );
 					$sheet->setCellValue('I'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalRetencionISR}" );
-				}
-				if($xmls_ingreso[$i]->Impuestos->Traslados != []){
 					$sheet->setCellValue('J'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalTrasladoIVA}" );
 					$sheet->setCellValue('K'.$num , "{$xmls_ingreso[$i]->Impuestos->TotalTrasladoIEPS}" );
+					$sheet->setCellValue('N'.$num , "{$xmls_ingreso[$i]->Impuestos->TotaldeTrasladosLoc}" );
+					$sheet->setCellValue('O'.$num , "{$xmls_ingreso[$i]->Impuestos->TotaldeRetencionesLoc}" );
 				}
-				$sheet->setCellValue('M'.$num , "=sum(C{$num}:K{$num})-L{$num}" );
+				if($xmls_ingreso[$i]->TipoDeComprobante === "P"){
+					$Monto = 0;
+					for ($s=0; $s < count($xmls_ingreso[$i]->Complementos->Pagos) ; $s++) {
+						$Monto = $Monto + $xmls_ingreso[$i]->Complementos->Pagos[$s]->Monto;
+					}
+					$sheet->setCellValue('M'.$num , "{$Monto}" );
+				}
+				$sheet->setCellValue('P'.$num , "=sum(C{$num}:K{$num})-L{$num}+ sum(M{$num}:O{$num})" );
 				// <------------------------------ Detector de errores en estructura de XMLS ------------------------------>
-				// $sheet->setCellValue('M'.$num , "{$xmls_ingreso[$i]->Total}" );
+				$sheet->setCellValue('Q'.$num , "{$xmls_ingreso[$i]->Total}" );
 				
 				$num++;
 			}
@@ -686,7 +748,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 			
 		}
 		if( $num < $limite ){
-			$spreadsheet->getActiveSheet()->getStyle("C{$start}:M{$limite}")->getNumberFormat()->setFormatCode('#,##0.00');
+			$spreadsheet->getActiveSheet()->getStyle("C{$start}:P{$limite}")->getNumberFormat()->setFormatCode('#,##0.00');
 			$final = $limite - 1;
 			# code...
 			$sheet->setCellValue("B{$limite}" , "INGRESOS TOTALES" );
@@ -701,15 +763,25 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 			$sheet->setCellValue("K{$limite}" , "=SUM(K{$start}:K{$limite})" );
 			$sheet->setCellValue("L{$limite}" , "=SUM(L{$start}:L{$limite})" );
 			$sheet->setCellValue("M{$limite}" , "=SUM(M{$start}:M{$limite})" );
+			$sheet->setCellValue("N{$limite}" , "=SUM(N{$start}:N{$limite})" );
+			$sheet->setCellValue("O{$limite}" , "=SUM(O{$start}:O{$limite})" );
+			$sheet->setCellValue("P{$limite}" , "=SUM(P{$start}:P{$limite})" );
 			$hoja++;
-			$spreadsheet->getActiveSheet()->getStyle("A{$limite}:M{$limite}")->getBorders()->getOutline()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-
-			$spreadsheet->getActiveSheet()->getStyle("A{$start}:M{$final}")->applyFromArray($styleCuerpoTabla);
+			$spreadsheet->getActiveSheet()->getStyle("A{$limite}:P{$limite}")->getBorders()->getOutline()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+			$spreadsheet->getActiveSheet()->getStyle("A{$start}:P{$final}")->applyFromArray($styleCuerpoTabla);
 		}
 	// Fin para el libro de ingreso
 	// <------------------------------------------------------------------------ EGRESOS -------------------------------------------------------------->
+
+
+
+
+
+
+
 	// Documentos para el libro de Egresos
 		// <--------------------------------- Parametros iniciales de la hoja de excel --------------------------------------------->
+		$hoja = 1;
 		$sheet = $spreadsheet->createSheet();
 		$sheet->setTitle("Egresos {$year}");
 		$spreadsheet->setActiveSheetIndex(1);
@@ -719,7 +791,6 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 		$spreadsheet->getActiveSheet()->getPageMargins()->setRight(0.75);
 		$spreadsheet->getActiveSheet()->getPageMargins()->setLeft(0.75);
 		$spreadsheet->getActiveSheet()->getPageMargins()->setBottom(1);
-
 		$sheet->setCellValue('A1', strtoupper($cliente['nombre']) );
 		$sheet->setCellValue('L1', "HOJA {$hoja}" ); 
 		$sheet->setCellValue('A2', strtoupper("Egresos correspondientes al mes de {$mes} del {$year}") ); 
@@ -747,7 +818,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 		$sheet->setCellValue("K5", "16 %" );
 		$sheet->setCellValue("L5", "0 %" );
 		$spreadsheet->getActiveSheet()->mergeCells("M4:M5");
-		$sheet->setCellValue("M4", "Devolcion" );
+		$sheet->setCellValue("M4", "Cuota Imss" );
 		$spreadsheet->getActiveSheet()->mergeCells("N4:N5");
 		$sheet->setCellValue("N4", "Pagos" );
 		$spreadsheet->getActiveSheet()->mergeCells("O4:O5");
@@ -772,7 +843,6 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 		$spreadsheet->getActiveSheet()->getColumnDimension('M')->setAutoSize(true);
 		$spreadsheet->getActiveSheet()->getColumnDimension('N')->setAutoSize(true);
 		$spreadsheet->getActiveSheet()->getColumnDimension('O')->setAutoSize(true);
-
 		$hoja = 1;
 		$num = 6;
 		$start = 6;
@@ -790,9 +860,9 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 			if($num === $limite){
 				// if ($hoja === 1) {
 					$final = $limite  - 1;
-					$spreadsheet->getActiveSheet()->getStyle("C{$start}:M{$limite}")->getNumberFormat()->setFormatCode('#,##0.00');
+					$spreadsheet->getActiveSheet()->getStyle("C{$start}:O{$limite}")->getNumberFormat()->setFormatCode('#,##0.00');
 					# code...
-					$sheet->setCellValue("B{$limite}" , "INGRESOS TOTALES" );
+					$sheet->setCellValue("B{$limite}" , "EGRESOS TOTALES" );
 					$sheet->setCellValue("C{$limite}" , "=SUM(C{$start}:C{$limite})" );
 					$sheet->setCellValue("D{$limite}" , "=SUM(D{$start}:D{$limite})" );
 					$sheet->setCellValue("E{$limite}" , "=SUM(E{$start}:E{$limite})" );
@@ -815,7 +885,6 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 					$num++;
 					$sheet->setCellValue("A{$num}", strtoupper("Ingresos correspondientes al mes de {$mes} del {$year}") ); 
 					$num++;
-
 					$num++;
 					$help = $num + 1;
 					
@@ -843,15 +912,13 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 					$sheet->setCellValue("K{$help}", "16 %" );
 					$sheet->setCellValue("L{$help}", "0 %" );
 					$spreadsheet->getActiveSheet()->mergeCells("M{$num}:M{$help}");
-					$sheet->setCellValue("M{$num}", "Devolcion" );
+					$sheet->setCellValue("M{$num}", "Cuota Imss" );
 					$spreadsheet->getActiveSheet()->mergeCells("N{$num}:N{$help}");
 					$sheet->setCellValue("N{$num}", "Pagos" );
 					$spreadsheet->getActiveSheet()->mergeCells("O{$num}:O{$help}");
 					$sheet->setCellValue("O{$num}", "Total" );
 					$spreadsheet->getActiveSheet()->getStyle("A{$num}:O{$help}")->applyFromArray($styleCabeceraTabla);
 					$num++;
-
-
 					$num++;
 					$help = $num + 1;
 					$start = $num;
@@ -868,17 +935,29 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 					$sheet->setCellValue("K{$num}" , "=K{$datos}" );
 					$sheet->setCellValue("L{$num}" , "=L{$datos}" );
 					$sheet->setCellValue("M{$num}" , "=M{$datos}" );
-					$sheet->setCellValue("M{$num}" , "=N{$datos}" );
+					$sheet->setCellValue("N{$num}" , "=N{$datos}" );
 					$sheet->setCellValue("O{$num}" , "=O{$datos}" );
 					$num++;
 					// <---------------------------------------Empezamos en la siguiente hoja ------------------------------------>
+					$sheet->setCellValue("C{$num}" , 0 );
+					$sheet->setCellValue("D{$num}" , 0 );
+					$sheet->setCellValue("E{$num}" , 0 );
+					$sheet->setCellValue("F{$num}" , 0 );
+					$sheet->setCellValue("G{$num}" , 0 );
+					$sheet->setCellValue("H{$num}" , 0 );
+					$sheet->setCellValue("I{$num}" , 0 );
+					$sheet->setCellValue("J{$num}" , 0 );
+					$sheet->setCellValue("K{$num}" , 0 );
+					$sheet->setCellValue("L{$num}" , 0 );
+					$sheet->setCellValue("M{$num}" , 0 );
+					$sheet->setCellValue("N{$num}" , 0 );
+					$sheet->setCellValue("O{$num}" , 0 );
 					// <------------------- Comenzamos --------------------->
 					$sheet->setCellValue('A'.$num , "{$xmls_egreso[$i]->Folio}" );
 					$sheet->setCellValue('B'.$num , mb_convert_case("{$xmls_egreso[$i]->Emisor->Nombre}", MB_CASE_TITLE, "UTF-8")  );
 					// <----------Detectamos si es deducible
 					if( $xmls_egreso[$i]->deducible === "si" ){
 						if( $xmls_egreso[$i]->TipoDeComprobante === "I" ){
-
 							if( $xmls_egreso[$i]->MetodoPago === "PPD" ){
 								//16%
 								$sheet->setCellValue('K'.$num , "{$xmls_egreso[$i]->TotalGravado}" );
@@ -889,10 +968,8 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 								$sheet->setCellValue('D'.$num , "{$xmls_egreso[$i]->TotalGravado}" );
 								//0%
 								$sheet->setCellValue('E'.$num , "{$xmls_egreso[$i]->TotalExento}" );
-								if($xmls_egreso[$i]->Impuestos->Traslados != []){
-									$sheet->setCellValue('F'.$num , "{$xmls_egreso[$i]->Impuestos->TotalTrasladoIVA}" );
-									$sheet->setCellValue('G'.$num , "{$xmls_egreso[$i]->Impuestos->TotalTrasladoIEPS}" );
-								}
+								$sheet->setCellValue('F'.$num , "{$xmls_egreso[$i]->Impuestos->TotalTrasladoIVA}" );
+								$sheet->setCellValue('G'.$num , "{$xmls_egreso[$i]->Impuestos->TotalTrasladoIEPS}" );								
 							}
 						}
 						if( $xmls_egreso[$i]->TipoDeComprobante === "E" ){
@@ -906,20 +983,23 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 							$sheet->setCellValue('N'.$num , "{$Monto}" );
 						}
 						if( $xmls_egreso[$i]->TipoDeComprobante === "N" ){
-
+							$sheet->setCellValue('H'.$num , "{$xmls_egreso[$i]->Complementos->Nomina->SubsidioImporte}" );
+							$sheet->setCellValue('I'.$num , "{$xmls_egreso[$i]->Complementos->Nomina->TotalImpuestosRetenidos}" );
+							$monto = 0;
+							$monto = $xmls_egreso[$i]->Complementos->Nomina->TotalExento+$xmls_egreso[$i]->Complementos->Nomina->TotalGravado;
+							$sheet->setCellValue('J'.$num , "{$monto}" );
 						}
 						$sheet->setCellValue('O'.$num , "=sum(C{$num}:N{$num})" );
+						// <------------ CUOTAS IMSS ------------------------------->
+						$sheet->setCellValue('M'.$num , "{$xmls_egreso[$i]->Otros->CuotaImss}" );
 						// <------------------------------ Detector de errores en estructura de XMLS ------------------------------>
-						// $sheet->setCellValue('M'.$num , "{$xmls_ingreso[$i]->Total}" );
-						
+						$sheet->setCellValue('P'.$num , "{$xmls_egreso[$i]->Total}" );
 					}else{
 						$sheet->setCellValue('C'.$num , "{$xmls_egreso[$i]->Total}" );
 					}
 					$num++;
 					$limite = $limite + $rango;
-
 				// }else{
-
 				// }
 			}else{
 				// <------------------------------------Comienzo de la hoja de calculo --------------------------------------------------------------->
@@ -942,7 +1022,6 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 				// <----------Detectamos si es deducible
 				if( $xmls_egreso[$i]->deducible === "si" ){
 					if( $xmls_egreso[$i]->TipoDeComprobante === "I" ){
-
 						if( $xmls_egreso[$i]->MetodoPago === "PPD" ){
 							//16%
 							$sheet->setCellValue('K'.$num , "{$xmls_egreso[$i]->TotalGravado}" );
@@ -953,11 +1032,10 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 							$sheet->setCellValue('D'.$num , "{$xmls_egreso[$i]->TotalGravado}" );
 							//0%
 							$sheet->setCellValue('E'.$num , "{$xmls_egreso[$i]->TotalExento}" );
-							if($xmls_egreso[$i]->Impuestos->Traslados != []){
-								$sheet->setCellValue('F'.$num , "{$xmls_egreso[$i]->Impuestos->TotalTrasladoIVA}" );
-								$sheet->setCellValue('G'.$num , "{$xmls_egreso[$i]->Impuestos->TotalTrasladoIEPS}" );
-							}
 						}
+						$sheet->setCellValue('F'.$num , "{$xmls_egreso[$i]->Impuestos->TotalTrasladoIVA}" );
+						$sheet->setCellValue('G'.$num , "{$xmls_egreso[$i]->Impuestos->TotalTrasladoIEPS}" );
+						// $sheet->setCellValue('G'.$num , "{$xmls_egreso[$i]->Impuestos->TotalTrasladoIEPS}" );
 					}
 					if( $xmls_egreso[$i]->TipoDeComprobante === "E" ){
 						$sheet->setCellValue('M'.$num , "{$xmls_egreso[$i]->Total}" );
@@ -970,11 +1048,17 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 						$sheet->setCellValue('N'.$num , "{$Monto}" );
 					}
 					if( $xmls_egreso[$i]->TipoDeComprobante === "N" ){
-
+						$sheet->setCellValue('H'.$num , "{$xmls_egreso[$i]->Complementos->Nomina->SubsidioImporte}" );
+						$sheet->setCellValue('I'.$num , "{$xmls_egreso[$i]->Complementos->Nomina->TotalImpuestosRetenidos}" );
+						$monto = 0;
+						$monto = $xmls_egreso[$i]->Complementos->Nomina->TotalExento+$xmls_egreso[$i]->Complementos->Nomina->TotalGravado;
+						$sheet->setCellValue('J'.$num , "{$monto}" );
 					}
 					$sheet->setCellValue('O'.$num , "=sum(C{$num}:N{$num})" );
+					// <------------ CUOTAS IMSS ------------------------------->
+					$sheet->setCellValue('M'.$num , "{$xmls_egreso[$i]->Otros->CuotaImss}" );
 					// <------------------------------ Detector de errores en estructura de XMLS ------------------------------>
-					// $sheet->setCellValue('M'.$num , "{$xmls_ingreso[$i]->Total}" );
+					$sheet->setCellValue('P'.$num , "{$xmls_egreso[$i]->Total}" );
 					
 				}else{
 					$sheet->setCellValue('C'.$num , "{$xmls_egreso[$i]->Total}" );
@@ -1007,7 +1091,6 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 			
 		}
 		
-
 	// Fin para el libro de Egresos
 	$spreadsheet->setActiveSheetIndex(0);
 	$writer = new Xlsx($spreadsheet);
@@ -1034,7 +1117,6 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
         $stmt->bindParam(':mes', $mes);
         $stmt->bindParam(':year', $year);
         $stmt->execute();
-
     } catch(PDOException $e){
         $mensaje = array(
             'status' => false,
@@ -1051,11 +1133,6 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 	);
 	echo json_encode($mensaje);
 });
-
-
-
-
-
 function ordenarFecha($a,$b){
 	return strtotime($a->Fecha) - strtotime($b->Fecha);
 }

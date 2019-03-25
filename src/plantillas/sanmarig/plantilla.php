@@ -49,7 +49,7 @@ sanmarig@hotmail.com
             <div style="width: 50% " class="bueno_por ">BUENO POR $ <?php echo number_format($cobro[$i]->importe,2,".",","); ?></div>
         </div>
         <div class="cuerpo ">
-            RECIBI DE <?php $str = strtoupper($cobro[$i]->cliente->nombre); echo $str ?> LA CANTIDAD DE ( <?php $numero_en_letras = new conversorNumero();$numero_en_letras = $numero_en_letras->conversor($cobro[$i]->importe); echo $numero_en_letras; ?> ) POR CONCEPTO DE HONORARIOS POR <?php echo strtoupper($cobro[$i]->descripcion) ?> CORRESPONDIENTES DEL <?php echo "{$cobro[$i]->inicio_servicioC} AL {$cobro[$i]->fecha_pendienteC}" ?>
+            RECIBI DE <?php $str = strtoupper($cobro[$i]->cliente->nombre); echo $str ?> LA CANTIDAD DE ( <?php $numero_en_letras = new conversorNumero();$numero_en_letras = $numero_en_letras->conversor($cobro[$i]->importe); echo $numero_en_letras; ?> ) POR CONCEPTO DE <?php echo strtoupper($cobro[$i]->descripcion) ?> CORRESPONDIENTES DEL <?php echo "{$cobro[$i]->inicio_servicioC} AL {$cobro[$i]->fecha_pendienteC}" ?>
         </div>
         <div class="fecha">
             POCHUTLA, OAX. A <?php echo $hoy ?>

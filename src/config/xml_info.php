@@ -7,6 +7,7 @@
             $CFDI->Emisor = (object)[];
             $CFDI->Impuestos = (object)[];
             $CFDI->Complementos = (object)[];
+            $CFDI->Otros = (object)[];
             $Conceptos = [];
             $UUID_vinculados = [];
             $xml = simplexml_load_file( $archivo_xml );
@@ -54,17 +55,85 @@
                 $CFDI->Receptor->Nombre = "{$Receptor['Nombre']}";              
                 $CFDI->Receptor->UsoCFDI = "{$Receptor['UsoCFDI']}";              
             }
+            // Variables para los impuestos
+            //Impuestos Base
+            $TotalBase16 = 0.0;
+            $TotalBase0 = 0.0;
+            $RetencionISR = 0;
+            $RetencionIVA = 0;
+            $RetencionIEPS = 0;
+            $TrasladoIVA = 0;
+            $TrasladoIEPS = 0;
             foreach ($xml->xpath('/cfdi:Comprobante/cfdi:Conceptos/cfdi:Concepto') as $Concepto){
+                $impuestos = [];      
                 $concepto = null;
                 $concepto['ClaveProdServ'] = "{$Concepto['ClaveProdServ']}";
+                $concepto['Descuento'] = "{$Concepto['Descuento']}";
                 $concepto['Cantidad'] = "{$Concepto['Cantidad']}";
                 $concepto['ClaveUnidad'] = "{$Concepto['ClaveUnidad']}";
                 $concepto['Unidad'] = "{$Concepto['Unidad']}";
                 $concepto['Descripcion'] = "{$Concepto['Descripcion']}";
                 $concepto['ValorUnitario'] = "{$Concepto['ValorUnitario']}";
                 $concepto['Importe'] = "{$Concepto['Importe']}";
+                $con = $Concepto->asXML();
+                $con = str_replace("cfdi:","",$con);
+                $con = str_replace("terceros:","",$con);
+                $con = simplexml_load_string($con);
+                // Bucle para obtener los Traslados del producto
+                foreach ($con->xpath('/Concepto/Impuestos/Traslados/Traslado') as $Traslado){
+                    $traslado = null; 
+                    $traslado['Importe'] = "{$Traslado['Importe']}";
+                    $traslado['Base'] = (float)$concepto['Importe'] - (float)$concepto['Descuento'];
+                    $traslado['Impuesto'] = "{$Traslado['Impuesto']}";
+                    $traslado['TipoFactor'] = "{$Traslado['TipoFactor']}";
+                    $traslado['TasaOCuota'] = "{$Traslado['TasaOCuota']}";
+                    if($traslado['Impuesto'] === "002" ){
+                        $TrasladoIVA = $TrasladoIVA + $traslado['Importe'];
+                    }
+                    if($traslado['Impuesto'] === "003" ){
+                        $TrasladoIEPS = $TrasladoIEPS + $traslado['Importe'];
+                    }
+                    array_push($impuestos, $traslado);
+                };
+                // Bucle para obtener Retenciones del producto
+                foreach ($xml->xpath('/Concepto/Retenciones/Retencion') as $Retencion){
+                    $retencion = null; 
+                    $retencion['Importe'] = "{$Retencion['Importe']}";
+                    $retencion['Base'] = (float)$concepto['Importe'] - (float)$concepto['Descuento'];
+                    $retencion['Impuesto'] = "{$Retencion['Impuesto']}";
+                    $retencion['TipoFactor'] = "{$Retencion['TipoFactor']}";
+                    $retencion['TasaOCuota'] = "{$Retencion['TasaOCuota']}";
+                    if( $retencion['Impuesto'] === "001" ){
+                        $RetencionISR = $RetencionISR + $retencion['Importe'];
+                    }
+                    if( $retencion['Impuesto'] === "002" ){
+                        $RetencionIVA = $RetencionIVA + $retencion['Importe'];
+                    }
+                    if( $retencion['Impuesto'] === "003" ){
+                        $RetencionIEPS = $RetencionIEPS + $retencion['Importe'];
+                    }
+                    array_push($Retenciones, $retencion);
+                }
+                // Bucle para impuestos a Terceros
+                foreach ($con->xpath('/Concepto/ComplementoConcepto/PorCuentadeTerceros/Impuestos/Traslados/Traslado') as $TerceroTraslado){
+                    $tasa = (float)"{$TerceroTraslado['tasa']}";
+                    if($tasa === 0.0){
+                        $TotalBase0 = $TotalBase0 + (float)$concepto['Importe'] - (float)$concepto['Descuento'];
+                    }
+                    if($tasa === 0.16){
+                        $TotalBase16 = $TotalBase16 + (float)$concepto['Importe'] - (float)$concepto['Descuento'];
+                    }
+                }
+                // Fin de bucles
+                $concepto['Impuestos'] = $impuestos;
                 array_push($Conceptos,$concepto);
             }
+            // Guardamos la informacion de los impuestos en la seccion de Impuestos
+            $CFDI->Impuestos->TotalTrasladoIVA = $TrasladoIVA;
+            $CFDI->Impuestos->TotalTrasladoIEPS = $TrasladoIEPS;
+            $CFDI->Impuestos->TotalRetencionISR = $RetencionISR;
+            $CFDI->Impuestos->TotalRetencionIVA = $RetencionIVA;
+            $CFDI->Impuestos->TotalRetencionIEPS = $RetencionIEPS;
             
 
             $CFDI->Conceptos = $Conceptos;
@@ -78,87 +147,54 @@
                 $CFDI->FechaTimbrado = "{$cfdiComplemento['FechaTimbrado']}";
             }
 
+            $CuotasImss = 0;
+            for ($i=0; $i < count($CFDI->Conceptos) ; $i++) { 
+                if($CFDI->Conceptos[$i]['ClaveProdServ'] === "85101701"){
+                    $CuotasImss = $CuotasImss + (float)$CFDI->Conceptos[$i]['Importe'] - (float)$CFDI->Conceptos[$i]['Descuento'];
+                }
+            }
+            $CFDI->Otros->CuotaImss = $CuotasImss;
+
                 // FIN DE OBTENCION DE VARIABLES GLOBALES EN LA FACTURA
-                $RetencionISR = 0;
-                $RetencionIVA = 0;
-                $RetencionIEPS = 0;
-                $TrasladoIVA = 0;
-                $TrasladoIEPS = 0;
+                
             if($CFDI->TipoDeComprobante === 'I' or $CFDI->TipoDeComprobante === 'E'){
                     // <-----------------------------Obtenemos manualmente el valor del ingreso por clientes --------------------------->
-                    $TotalBase16 = 0.0;
-                    $TotalBase0 = 0.0;
-                    foreach ($xml->xpath('/cfdi:Comprobante/cfdi:Conceptos/cfdi:Concepto/cfdi:Impuestos/cfdi:Traslados/cfdi:Traslado') as $base){
-                        if( "{$base['TasaOCuota']}" === "0.160000" ){
-                            $TotalBase16 = $TotalBase16 + "{$base['Base']}";
-                        }
-                        if( "{$base['TipoFactor']}" === "Exento" OR "{$base['TasaOCuota']}" === "0.000000"){
-                            $TotalBase0 = $TotalBase0 + "{$base['Base']}";
+                    // Continuacion con las variables de abajo
+                    // $TotalBase16 = 0.0;
+                    // $TotalBase0 = 0.0;
+                    for ($l=0; $l < count($CFDI->Conceptos) ; $l++) { 
+                        for ($x=0; $x < count($CFDI->Conceptos[$l]['Impuestos']) ; $x++) { 
+                            $base16 = (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['TasaOCuota'];
+                            if( $base16 === .16 ){
+                                $TotalBase16 = $TotalBase16 + (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['Base'];
+                            }
+                            if( $CFDI->Conceptos[$l]['Impuestos'][$x]['TasaOCuota'] === "0.000000"){
+                                $TotalBase0 = $TotalBase0 + (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['Base'];
+                            }
+                            if( $CFDI->Conceptos[$l]['Impuestos'][$x]['TipoFactor'] === "Exento"){
+                                $TotalBase0 = $TotalBase0 + (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['Base'];
+                            }
                         }
                     }
                     $CFDI->TotalGravado = $TotalBase16;
                     $CFDI->TotalExento = $TotalBase0;
-                    // <-----------------------------Obtenemos manualmente el total de los impuestos Retenidos --------------------------->
-                    // $TotalImpuestosRetenidosISR = 0.0;
-                    // $TotalImpuestosRetenidosIVA = 0.0;
-                    // foreach ($xml->xpath('/cfdi:Comprobante/cfdi:Conceptos/cfdi:Concepto/cfdi:Impuestos/cfdi:Retenciones/cfdi:Retencion') as $base){
-                    //     if( "{$base['Impuesto']}" === "001" ){
-                    //         $TotalImpuestosRetenidosISR = $TotalImpuestosRetenidosISR + "{$base['Importe']}";
-                    //     }
-                    //     if( "{$base['Impuesto']}" === "002" ){
-                    //         $TotalImpuestosRetenidosIVA = $TotalImpuestosRetenidosIVA + "{$base['Importe']}";
-                    //     }
-                    // }
-                    // $CFDI->TotalImpuestosRetenidosISR = $TotalImpuestosRetenidosISR;
-                    // $CFDI->TotalImpuestosRetenidosIVA = $TotalImpuestosRetenidosIVA;
-                    // <------------------------- FIN -------------------------->
-                    // Fin separacion
-                $Traslados = [];
-                $Retenciones = [];
-                foreach ($xml->xpath('/cfdi:Comprobante/cfdi:Impuestos/cfdi:Traslados/cfdi:Traslado') as $Traslado){
-                    $traslado = null; 
-                    $traslado['Importe'] = "{$Traslado['Importe']}";
-                    $traslado['Base'] = "{$Traslado['Base']}";
-                    $traslado['Impuesto'] = "{$Traslado['Impuesto']}";
-                    $traslado['TipoFactor'] = "{$Traslado['TipoFactor']}";
-                    $traslado['TasaOCuota'] = "{$Traslado['TasaOCuota']}";
-                    array_push($Traslados, $traslado);
-                    if($traslado['Impuesto'] === "002" ){
-                        $TrasladoIVA = $TrasladoIVA + $traslado['Importe'];
+                // <------------------------------------------- IMPUESTOS Y OTROS ------------------------------------------------------>
+                    foreach ($xml->xpath('/cfdi:Comprobante/cfdi:Impuestos') as $Imp){
+                        $CFDI->TotalImpuestosRetenidos = "{$Imp['TotalImpuestosRetenidos']}";
+                        $CFDI->TotalImpuestosTrasladados = "{$Imp['TotalImpuestosTrasladados']}";
                     }
-                    if($traslado['Impuesto'] === "003" ){
-                        $TrasladoIEPS = $TrasladoIEPS + $traslado['Importe'];
-                    }
+                    
+                // <------------------------------------------- FIN IMPUESTOS Y OTROS ------------------------------------------------------>
+                // IMPUESTOS LOCALES
+                $TotaldeTraslados = 0;
+                $TotaldeRetenciones = 0;
+                error_reporting(0);
+                foreach ($xml->xpath('/cfdi:Comprobante/cfdi:Complemento/implocal:ImpuestosLocales') as $loc){
+                    $TotaldeTraslados = "{$loc['TotaldeTraslados']}";
+                    $TotaldeRetenciones = "{$loc['TotaldeRetenciones']}";
                 }
-                $CFDI->Impuestos->Traslados = $Traslados;
-                $CFDI->Impuestos->TotalTrasladoIVA = $TrasladoIVA;
-                $CFDI->Impuestos->TotalTrasladoIEPS = $TrasladoIEPS;
-                foreach ($xml->xpath('/cfdi:Comprobante/cfdi:Impuestos/cfdi:Retenciones/cfdi:Retencion') as $Retencion){
-                    $retencion = null; 
-                    $retencion['Importe'] = "{$Retencion['Importe']}";
-                    $retencion['Base'] = "{$Retencion['Base']}";
-                    $retencion['Impuesto'] = "{$Retencion['Impuesto']}";
-                    $retencion['TipoFactor'] = "{$Retencion['TipoFactor']}";
-                    $retencion['TasaOCuota'] = "{$Retencion['TasaOCuota']}";
-                    array_push($Retenciones, $retencion);
-                    if( $retencion['Impuesto'] === "001" ){
-                        $RetencionISR = $RetencionISR + $retencion['Importe'];
-                    }
-                    if( $retencion['Impuesto'] === "002" ){
-                        $RetencionIVA = $RetencionIVA + $retencion['Importe'];
-                    }
-                    if( $retencion['Impuesto'] === "003" ){
-                        $RetencionIEPS = $RetencionIEPS + $retencion['Importe'];
-                    }
-                }
-                $CFDI->Impuestos->Retenciones = $Retenciones;
-                $CFDI->Impuestos->TotalRetencionISR = $RetencionISR;
-                $CFDI->Impuestos->TotalRetencionIVA = $RetencionIVA;
-                $CFDI->Impuestos->TotalRetencionIEPS = $RetencionIEPS;
-                foreach ($xml->xpath('/cfdi:Comprobante/cfdi:Impuestos') as $Imp){
-                    $CFDI->TotalImpuestosRetenidos = "{$Imp['TotalImpuestosRetenidos']}";
-                    $CFDI->TotalImpuestosTrasladados = "{$Imp['TotalImpuestosTrasladados']}";
-                }
+                $CFDI->Impuestos->TotaldeTrasladosLoc = $TotaldeTraslados;
+                $CFDI->Impuestos->TotaldeRetencionesLoc = $TotaldeRetenciones;
                 
             }
             if($CFDI->TipoDeComprobante === 'N'){
