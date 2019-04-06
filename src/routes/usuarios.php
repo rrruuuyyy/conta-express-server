@@ -91,7 +91,7 @@ $app->post('/api/usuarios/access', function(Request $request, Response $response
     $correo = $request->getParam('correo');
     $password = $request->getParam('password');
     $sql = "SELECT * FROM usuario WHERE correo = '$correo'";
-
+    $sql2 = "SELECT * FROM sub_usuario WHERE correo = '$correo'";
     try{
         // Get DB Object
         $db = new db();
@@ -106,7 +106,8 @@ $app->post('/api/usuarios/access', function(Request $request, Response $response
                 'mensaje' => 'Usuario o contraseña incorrecta',
                 'error' => 'acceso denegado' 
             );
-            return json_encode($mensaje);
+            echo json_encode($mensaje);
+            return;
         }
         //Desencriptar contraseña y validar si es correcta
         if ( password_verify($password, $usuario->password) ) {

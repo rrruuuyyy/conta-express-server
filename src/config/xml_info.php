@@ -163,16 +163,21 @@
                     // $TotalBase16 = 0.0;
                     // $TotalBase0 = 0.0;
                     for ($l=0; $l < count($CFDI->Conceptos) ; $l++) { 
-                        for ($x=0; $x < count($CFDI->Conceptos[$l]['Impuestos']) ; $x++) { 
-                            $base16 = (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['TasaOCuota'];
-                            if( $base16 === .16 ){
-                                $TotalBase16 = $TotalBase16 + (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['Base'];
+                        for ($x=0; $x < count($CFDI->Conceptos[$l]['Impuestos']) ; $x++) {
+                            if( $CFDI->Conceptos[$l]['Impuestos'][$x]['Impuesto'] === "003" ){
+                                
                             }
-                            if( $CFDI->Conceptos[$l]['Impuestos'][$x]['TasaOCuota'] === "0.000000"){
-                                $TotalBase0 = $TotalBase0 + (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['Base'];
-                            }
-                            if( $CFDI->Conceptos[$l]['Impuestos'][$x]['TipoFactor'] === "Exento"){
-                                $TotalBase0 = $TotalBase0 + (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['Base'];
+                            if( $CFDI->Conceptos[$l]['Impuestos'][$x]['Impuesto'] === "002" ){
+                                $base16 = (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['TasaOCuota'];
+                                if( $base16 === .16 ){
+                                    $TotalBase16 = $TotalBase16 + (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['Base'];
+                                }
+                                if( $CFDI->Conceptos[$l]['Impuestos'][$x]['TasaOCuota'] === "0.000000"){
+                                    $TotalBase0 = $TotalBase0 + (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['Base'];
+                                }
+                                if( $CFDI->Conceptos[$l]['Impuestos'][$x]['TasaOCuota'] === ""){
+                                    $TotalBase0 = $TotalBase0 + (float)$CFDI->Conceptos[$l]['Impuestos'][$x]['Base'];
+                                }
                             }
                         }
                     }

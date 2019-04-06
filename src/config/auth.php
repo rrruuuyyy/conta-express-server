@@ -1,5 +1,6 @@
 <?php
     use Firebase\JWT\JWT;
+    error_reporting(0);
 
     class Auth {
 
