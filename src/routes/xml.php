@@ -667,7 +667,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 						}
 						$sheet->setCellValue('M'.$num , "{$Monto}" );
 					}
-					$sheet->setCellValue('P'.$num , "=sum(C{$num}:K{$num})-L{$num}+ sum(M{$num}:O{$num})" );
+					$sheet->setCellValue('P'.$num , "=sum(C{$num}:G{$num})-H{$num}-I{$num}+sum(J{$num}:K{$num})-L{$num}+ sum(M{$num}:O{$num})" );
 					// <------------------------------ Detector de errores en estructura de XMLS ------------------------------>
 					$sheet->setCellValue('Q'.$num , "{$xmls_ingreso[$i]->Total}" );
 					
@@ -736,7 +736,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 					}
 					$sheet->setCellValue('M'.$num , "{$Monto}" );
 				}
-				$sheet->setCellValue('P'.$num , "=sum(C{$num}:K{$num})-L{$num}+ sum(M{$num}:O{$num})" );
+				$sheet->setCellValue('P'.$num , "=sum(C{$num}:G{$num})-H{$num}-I{$num}+sum(J{$num}:K{$num})-L{$num}+ sum(M{$num}:O{$num})" );
 				// <------------------------------ Detector de errores en estructura de XMLS ------------------------------>
 				$sheet->setCellValue('Q'.$num , "{$xmls_ingreso[$i]->Total}" );
 				
@@ -993,7 +993,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 							$monto = $xmls_egreso[$i]->Complementos->Nomina->TotalExento+$xmls_egreso[$i]->Complementos->Nomina->TotalGravado;
 							$sheet->setCellValue('J'.$num , "{$monto}" );
 						}
-						$sheet->setCellValue('P'.$num , "=sum(C{$num}:O{$num})" );
+						$sheet->setCellValue('P'.$num , "=sum(C{$num}:H{$num})-I{$num}+sum(J{$num}:N{$num})" );
 						// <------------ CUOTAS IMSS ------------------------------->
 						$sheet->setCellValue('M'.$num , "{$xmls_egreso[$i]->Otros->CuotaImss}" );
 						// <------------------------------ Detector de errores en estructura de XMLS ------------------------------>
@@ -1058,7 +1058,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 						$monto = $xmls_egreso[$i]->Complementos->Nomina->TotalExento+$xmls_egreso[$i]->Complementos->Nomina->TotalGravado;
 						$sheet->setCellValue('J'.$num , "{$monto}" );
 					}
-					$sheet->setCellValue('P'.$num , "=sum(C{$num}:O{$num})" );
+					$sheet->setCellValue('P'.$num , "=sum(C{$num}:H{$num})-I{$num}+sum(J{$num}:N{$num})" );
 					// <------------ CUOTAS IMSS ------------------------------->
 					$sheet->setCellValue('M'.$num , "{$xmls_egreso[$i]->Otros->CuotaImss}" );
 					// <------------------------------ Detector de errores en estructura de XMLS ------------------------------>
