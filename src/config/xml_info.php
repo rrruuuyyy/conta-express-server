@@ -59,6 +59,7 @@
             //Impuestos Base
             $TotalBase16 = 0.0;
             $TotalBase0 = 0.0;
+            $TotalBaseIEPS = 0.0;
             $RetencionISR = 0;
             $RetencionIVA = 0;
             $RetencionIEPS = 0;
@@ -88,10 +89,11 @@
                     $traslado['TipoFactor'] = "{$Traslado['TipoFactor']}";
                     $traslado['TasaOCuota'] = "{$Traslado['TasaOCuota']}";
                     if($traslado['Impuesto'] === "002" ){
-                        $TrasladoIVA = $TrasladoIVA + $traslado['Importe'];
+                        $TrasladoIVA = $TrasladoIVA + $traslado['Importe'];   
                     }
                     if($traslado['Impuesto'] === "003" ){
                         $TrasladoIEPS = $TrasladoIEPS + $traslado['Importe'];
+                        $TotalBaseIEPS = TotalBaseIEPS + $traslado['Base'];
                     }
                     array_push($impuestos, $traslado);
                 };
@@ -183,6 +185,7 @@
                     }
                     $CFDI->TotalGravado = $TotalBase16;
                     $CFDI->TotalExento = $TotalBase0;
+                    $CFDI->TotalIEPS = $TotalBaseIEPS;
                 // <------------------------------------------- IMPUESTOS Y OTROS ------------------------------------------------------>
                     foreach ($xml->xpath('/cfdi:Comprobante/cfdi:Impuestos') as $Imp){
                         $CFDI->TotalImpuestosRetenidos = "{$Imp['TotalImpuestosRetenidos']}";

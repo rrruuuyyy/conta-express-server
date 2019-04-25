@@ -637,7 +637,13 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 							// <------------------- Si es ventas al publico en general -------------------------->
 							if($xmls_ingreso[$i]->TipoDeComprobante === "I"){
 								if( $xmls_ingreso[$i]->Receptor->Rfc === "XAXX010101000" ){
-									$sheet->setCellValue('C'.$num , "{$xmls_ingreso[$i]->Total}" );
+									$subT = 0;
+									$subT = (float)$xmls_ingreso[$i]->TotalGravado + (float)$xmls_ingreso[$i]->TotalExento;
+									if($subT === 0.0){
+										$sheet->setCellValue('C'.$num , "{$xmls_ingreso[$i]->Total}" );
+									}else{
+										$sheet->setCellValue('C'.$num , "{$subT}" );									
+									}
 								}else{
 									//SI NO ES EN PARCIALIDADES SE VA A LA DE CLIENTE
 									//16%
@@ -710,7 +716,13 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 						// <------------------- Si es ventas al publico en general -------------------------->
 						if($xmls_ingreso[$i]->TipoDeComprobante === "I"){
 							if( $xmls_ingreso[$i]->Receptor->Rfc === "XAXX010101000" ){
-								$sheet->setCellValue('C'.$num , "{$xmls_ingreso[$i]->Total}" );
+								$subT = 0;
+								$subT = (float)$xmls_ingreso[$i]->TotalGravado + (float)$xmls_ingreso[$i]->TotalExento;
+								if($subT === 0.0){
+									$sheet->setCellValue('C'.$num , "{$xmls_ingreso[$i]->Total}" );
+								}else{
+									$sheet->setCellValue('C'.$num , "{$subT}" );									
+								}
 							}else{
 								//SI NO ES EN PARCIALIDADES SE VA A LA DE CLIENTE
 								//16%
@@ -1099,6 +1111,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 	// Fin para el libro de Egresos
 	$spreadsheet->setActiveSheetIndex(0);
 	$writer = new Xlsx($spreadsheet);
+	$cliente['nombre'] =str_replace(' ', '', $$cliente['nombre']);
 	$nombre_archivo = "Ingresos_Egresos_{$mes}_{$year}".$cliente['nombre'];
 	$name = $nombre_archivo.".xlsx";
 	$carpeta = 'calculos' ;
