@@ -5,7 +5,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 $app->post('/api/usuarios/new', function(Request $request, Response $response){
     $nombre = $request->getParam('nombre');
     $apellidos = $request->getParam('apellidos');
-    $correo = $request->getParam('email');
+    $correo = $request->getParam('correo');
     $password = $request->getParam('password');
     $rfc = $request->getParam('rfc');
     $password = password_hash($password, PASSWORD_DEFAULT);

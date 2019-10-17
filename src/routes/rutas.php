@@ -11,3 +11,12 @@ require 'folios.php';
 require 'cobros.php';
 require 'recibos.php';
 require 'subusers.php';
+require 'tools.php';
+require 'xml_search.php';
+$app->get('/api/', function(Request $request, Response $response){
+    $mensaje = array(
+        'status' => true,
+        'mensaje' => 'Conexion creada'
+    );
+    echo json_encode($mensaje);
+});

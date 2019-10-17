@@ -353,6 +353,30 @@
                         array_push($pagos_separados, $p->asXML() );
                         $TotalPagos = $TotalPagos + $pago->Monto;
                     }
+                    if($TotalPagos === 0){
+                        foreach ($xml->xpath('/c:Comprobante/c:Complemento') as $p){
+                            $pago = (object)[];
+                            $pago->FechaPago = "{$p->Pagos->Pago['FechaPago']}";
+                            $pago->FormaDePagoP = "{$p->Pagos->Pago['FormaDePagoP']}";
+                            $pago->MonedaP = "{$p->Pagos->Pago['MonedaP']}";
+                            $pago->TipoCambioP = "{$p->Pagos->Pago['TipoCambioP']}";
+                            $pago->Monto = "{$p->Pagos->Pago['Monto']}";
+                            $pago->NumOperacion = "{$p->Pagos->Pago['NumOperacion']}";
+                            $pago->RfcEmisorCtaOrd = "{$p->Pagos->Pago['RfcEmisorCtaOrd']}";
+                            $pago->NomBancoOrdExt = "{$p->Pagos->Pago['NomBancoOrdExt']}";
+                            $pago->CtaOrdenante = "{$p->Pagos->Pago['CtaOrdenante']}";
+                            $pago->RfcEmisorCtaBen = "{$p->Pagos->Pago['RfcEmisorCtaBen']}";
+                            $pago->CtaBeneficiario = "{$p->Pagos->Pago['CtaBeneficiario']}";
+                            $pago->TipoCadPago = "{$p->Pagos->Pago['TipoCadPago']}";
+                            $pago->CertPago = "{$p->Pagos->Pago['CertPago']}";
+                            $pago->CadPago = "{$p->Pagos->Pago['CadPago']}";
+                            $pago->SelloPago = "{$p->Pagos->Pago['SelloPago']}";
+                            $pago->documentos = [];
+                            array_push($pagos,$pago);
+                            array_push($pagos_separados, $p->asXML() );
+                            $TotalPagos = $TotalPagos + $pago->Monto;
+                        }
+                    }
                     for ($i=0; $i < count($pagos_separados) ; $i++) {
                         
                         $pagos_separados[$i] = str_replace("pago10:","",$pagos_separados[$i]);
