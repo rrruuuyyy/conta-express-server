@@ -14,6 +14,8 @@ require 'subusers.php';
 require 'tools.php';
 require 'xml_search.php';
 require 'proveedores_cliente.php';
+require 'info.php';
+require 'pendientes.php';
 $app->get('/api/', function(Request $request, Response $response){
     $mensaje = array(
         'status' => true,

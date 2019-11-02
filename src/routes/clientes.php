@@ -51,7 +51,7 @@ $app->post('/api/clientes/new', function(Request $request, Response $response){
     //     return;
     // }
     // Fin Verificacion
-    $sql = "INSERT INTO cliente (idusuario,nombre,correo,rfc,calle,colonia,cp,estado,pais) VALUES (:idusuario,:nombre,:correo,:rfc,:calle,:colonia,:cp,:estado,:pais)";
+    $sql = "INSERT INTO cliente (idusuario,nombre,correo,rfc,persona,declaracion,regimen,calle,colonia,cp,estado,pais) VALUES (:idusuario,:nombre,:correo,:rfc,:persona,:declaracion,:regimen,:calle,:colonia,:cp,:estado,:pais)";
     try{
         // Get DB Object
         $db = new db();
@@ -62,6 +62,9 @@ $app->post('/api/clientes/new', function(Request $request, Response $response){
         $stmt->bindParam(':nombre', $cliente->nombre);
         $stmt->bindParam(':correo', $cliente->correo);
         $stmt->bindParam(':rfc', $cliente->rfc);
+        $stmt->bindParam(':persona', $cliente->persona);
+        $stmt->bindParam(':regimen', $cliente->regimen);
+        $stmt->bindParam(':declaracion', $cliente->declaracion);
         $stmt->bindParam(':calle', $cliente->calle);
         $stmt->bindParam(':colonia', $cliente->colonia);
         $stmt->bindParam(':cp', $cliente->cp);
@@ -101,6 +104,9 @@ $app->put('/api/clientes/update', function(Request $request, Response $response)
                 nombre   = :nombre,
                 correo   = :correo,
                 rfc     = :rfc,
+                persona     = :persona,
+                regimen     = :regimen,
+                declaracion     = :declaracion,
                 calle       = :calle,
                 colonia       = :colonia,
                 cp      = :cp,
@@ -117,6 +123,9 @@ $app->put('/api/clientes/update', function(Request $request, Response $response)
         $stmt->bindParam(':nombre', $cliente->nombre);
         $stmt->bindParam(':correo', $cliente->correo);
         $stmt->bindParam(':rfc', $cliente->rfc);
+        $stmt->bindParam(':persona', $cliente->persona);
+        $stmt->bindParam(':regimen', $cliente->regimen);
+        $stmt->bindParam(':declaracion', $cliente->declaracion);
         $stmt->bindParam(':calle', $cliente->calle);
         $stmt->bindParam(':colonia', $cliente->colonia);
         $stmt->bindParam(':cp', $cliente->cp);

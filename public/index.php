@@ -11,6 +11,7 @@ require '../src/config/fechas.php';
 require '../src/config/idCreator.php';
 require '../src/config/pdfCreator.php';
 require '../src/config/conversorNumero.php';
+require '../src/config/procesador.php';
 
 $app = new \Slim\App;
 $app->add(function ($req, $res, $next) {
