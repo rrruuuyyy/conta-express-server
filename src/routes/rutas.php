@@ -16,6 +16,7 @@ require 'xml_search.php';
 require 'proveedores_cliente.php';
 require 'info.php';
 require 'pendientes.php';
+require 'certificado.php';
 $app->get('/api/', function(Request $request, Response $response){
     $mensaje = array(
         'status' => true,

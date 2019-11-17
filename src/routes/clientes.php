@@ -51,7 +51,8 @@ $app->post('/api/clientes/new', function(Request $request, Response $response){
     //     return;
     // }
     // Fin Verificacion
-    $sql = "INSERT INTO cliente (idusuario,nombre,correo,rfc,persona,declaracion,regimen,calle,colonia,cp,estado,pais) VALUES (:idusuario,:nombre,:correo,:rfc,:persona,:declaracion,:regimen,:calle,:colonia,:cp,:estado,:pais)";
+    $sql = "INSERT INTO cliente (idusuario,nombre,correo,rfc,calle,colonia,cp,estado,pais,persona,regimen,ejercicio,deduccion,declaracion) 
+    VALUES (:idusuario,:nombre,:correo,:rfc,:calle,:colonia,:cp,:estado,:pais,:persona,:regimen,:ejercicio,:deduccion,:declaracion)";
     try{
         // Get DB Object
         $db = new db();
@@ -62,14 +63,16 @@ $app->post('/api/clientes/new', function(Request $request, Response $response){
         $stmt->bindParam(':nombre', $cliente->nombre);
         $stmt->bindParam(':correo', $cliente->correo);
         $stmt->bindParam(':rfc', $cliente->rfc);
-        $stmt->bindParam(':persona', $cliente->persona);
-        $stmt->bindParam(':regimen', $cliente->regimen);
-        $stmt->bindParam(':declaracion', $cliente->declaracion);
         $stmt->bindParam(':calle', $cliente->calle);
         $stmt->bindParam(':colonia', $cliente->colonia);
         $stmt->bindParam(':cp', $cliente->cp);
         $stmt->bindParam(':estado', $cliente->estado);
         $stmt->bindParam(':pais', $cliente->pais);
+        $stmt->bindParam(':persona', $cliente->persona);
+        $stmt->bindParam(':regimen', $cliente->regimen);
+        $stmt->bindParam(':ejercicio', $cliente->regimen);
+        $stmt->bindParam(':deduccion', $cliente->deduccion);
+        $stmt->bindParam(':declaracion', $cliente->declaracion);
         $stmt->execute();
         $mensaje = array(
             'status' => true,
@@ -104,14 +107,16 @@ $app->put('/api/clientes/update', function(Request $request, Response $response)
                 nombre   = :nombre,
                 correo   = :correo,
                 rfc     = :rfc,
-                persona     = :persona,
-                regimen     = :regimen,
-                declaracion     = :declaracion,
                 calle       = :calle,
                 colonia       = :colonia,
                 cp      = :cp,
                 estado      = :estado,
-                pais      = :pais
+                pais      = :pais,                
+                persona     = :persona,
+                regimen     = :regimen,
+                ejercicio     = :ejercicio,
+                deduccion     = :deduccion,
+                declaracion     = :declaracion
             WHERE idcliente = $cliente->idcliente";
     try{
         // Get DB Object
@@ -122,15 +127,17 @@ $app->put('/api/clientes/update', function(Request $request, Response $response)
         $stmt->bindParam(':idusuario', $cliente->idusuario);
         $stmt->bindParam(':nombre', $cliente->nombre);
         $stmt->bindParam(':correo', $cliente->correo);
-        $stmt->bindParam(':rfc', $cliente->rfc);
-        $stmt->bindParam(':persona', $cliente->persona);
-        $stmt->bindParam(':regimen', $cliente->regimen);
-        $stmt->bindParam(':declaracion', $cliente->declaracion);
+        $stmt->bindParam(':rfc', $cliente->rfc);        
         $stmt->bindParam(':calle', $cliente->calle);
         $stmt->bindParam(':colonia', $cliente->colonia);
         $stmt->bindParam(':cp', $cliente->cp);
         $stmt->bindParam(':estado', $cliente->estado);
         $stmt->bindParam(':pais', $cliente->pais);
+        $stmt->bindParam(':persona', $cliente->persona);
+        $stmt->bindParam(':regimen', $cliente->regimen);
+        $stmt->bindParam(':ejercicio', $cliente->ejercicio);
+        $stmt->bindParam(':deduccion', $cliente->deduccion);
+        $stmt->bindParam(':declaracion', $cliente->declaracion);
         $stmt->execute();
         $mensaje = array(
             'status' => true,
