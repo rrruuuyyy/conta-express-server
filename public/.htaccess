@@ -5,6 +5,6 @@ RewriteEngine on
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule . index.php [L]
-php_value max_execution_time 120
+php_value max_execution_time 1000
 php_value max_file_uploads 800
 php_value memory_limit 2000M

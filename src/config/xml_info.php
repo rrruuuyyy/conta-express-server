@@ -95,7 +95,7 @@
                         $traslado['TipoFactor'] = "{$Traslado['TipoFactor']}";
                         $traslado['TasaOCuota'] = "{$Traslado['TasaOCuota']}";
                         if($traslado['Impuesto'] === "002" ){
-                            $TrasladoIVA = $TrasladoIVA + $traslado['Importe'];   
+                            $TrasladoIVA = $TrasladoIVA + floatval($traslado['Importe']);   
                         }
                         if($traslado['Impuesto'] === "003" ){
                             $TrasladoIEPS = $TrasladoIEPS + $traslado['Importe'];

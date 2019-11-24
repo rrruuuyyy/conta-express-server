@@ -6,6 +6,9 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'XmlSchemaValidator\\' => array($vendorDir . '/eclipxe/xmlschemavalidator/src/XmlSchemaValidator'),
+    'XmlResourceRetriever\\' => array($vendorDir . '/eclipxe/xmlresourceretriever/src/XmlResourceRetriever'),
+    'Symfony\\Component\\Process\\' => array($vendorDir . '/symfony/process'),
     'Slim\\' => array($vendorDir . '/slim/slim/Slim'),
     'Psr\\SimpleCache\\' => array($vendorDir . '/psr/simple-cache/src'),
     'Psr\\Log\\' => array($vendorDir . '/psr/log/Psr/Log'),
@@ -21,4 +24,5 @@ return array(
     'FastRoute\\' => array($vendorDir . '/nikic/fast-route/src'),
     'DeepCopy\\' => array($vendorDir . '/myclabs/deep-copy/src/DeepCopy'),
     'Complex\\' => array($vendorDir . '/markbaker/complex/classes/src'),
+    'CfdiUtils\\' => array($vendorDir . '/eclipxe/cfdiutils/src/CfdiUtils'),
 );

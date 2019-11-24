@@ -142,7 +142,7 @@
 	    	//Detectamos que tipo de xml nos estan enviando
 	    	// <----------------------------------------- XML DE TIPO INGRESO -------------------------------------------------->
 	    	if( $xml->TipoDeComprobante === 'I'){
-	    		$xml = obtenerInfoPadre($xml->idusuario, $xml->UUID);
+	    		$xml = obtenerInfoPadre($xml->idcliente, $xml->UUID);
 	    		$mensaje = array(
 		            'status' => true,
 		            'mensaje' => 'Xmls cargados',
@@ -159,7 +159,7 @@
 	    		}
 	    		$uuids_padre = array_unique($uuids_padre);
 	    		$facturas = [];
-	    		$xmls = obtenerInfoPadre($xml->idusuario, $uuids_padre);
+	    		$xmls = obtenerInfoPadre($xml->idcliente, $uuids_padre);
 	    		$mensaje = array(
 		            'status' => true,
 		            'mensaje' => 'Xmls PADRE',
@@ -176,13 +176,13 @@
 	        return json_encode($mensaje);
 	    }
 	});
-
-function obtenerInfoPadre($idusuario,$uuids){
+	
+function obtenerInfoPadre($idcliente,$uuid){
 	$xml_padre;
+	$xml = '';
 	$xmls_padre = [];
-	if( is_string($uuids) ){
-		$consulta = "SELECT * FROM `docto-xml` WHERE UUID='$uuids' ";
-		try{
+	$consulta = "SELECT * FROM `docto-xml` WHERE UUID='$uuid' ";
+	    try{
 	        // Instanciar la base de datos
 	        $db = new db();
 
@@ -199,110 +199,38 @@ function obtenerInfoPadre($idusuario,$uuids){
 	        $xml->Receptor = json_decode($xml->Receptor);
 	        $xml->Otros = json_decode($xml->Otros);
 	        $xml->UUIDS_relacionados = json_decode($xml->UUIDS_relacionados);
-	        $xml_padre = $xml;
+	        //Exportar y mostrar en formato JSON
+	        $xmls_relacionados = [];
+	    	//Detectamos que tipo de xml nos estan enviando
+	    	// <----------------------------------------- XML DE TIPO INGRESO -------------------------------------------------->
+			error_reporting(0);
+	    	if( $xml->TipoDeComprobante === 'I'){
+	    		$consulta = "SELECT * FROM `docto-xml` WHERE idcliente='$xml->idcliente' ";
+	    		try{
+			        // Instanciar la base de datos
+			        $db = new db();
 
-	    } catch(PDOException $e){
-	        $mensaje = array(
-	            'status' => false,
-	            'mensaje' => 'Xml no cargados desde busqueda padre',
-	            'error' => $e->getMessage()
-	        );
-	        return json_encode($mensaje);
-	    }
-	}else{
-		$xml;
-		for ($i=0; $i < count($uuids) ; $i++) {
-			$uuid = $uuids[$i];
-			$consulta = "SELECT * FROM `docto-xml` WHERE UUID='$uuid' ";
-			try{
-		        // Instanciar la base de datos
-		        $db = new db();
-
-		        // Conexión
-		        $db = $db->connect();
-		        $ejecutar = $db->query($consulta);
-		        $xml = $ejecutar->fetch(PDO::FETCH_OBJ);
-		        $db = null;
-
-		        if($xml){
-		        	$xml->encontrado = true;
-		        	$xml->Complementos = json_decode($xml->Complementos);
-			        $xml->Conceptos = json_decode($xml->Conceptos);
-			        $xml->Emisor = json_decode($xml->Emisor);
-			        $xml->Impuestos = json_decode($xml->Impuestos);
-			        $xml->Receptor = json_decode($xml->Receptor);
-			        $xml->Otros = json_decode($xml->Otros);
-			        $xml->UUIDS_relacionados = json_decode($xml->UUIDS_relacionados);
-		        }else{
-		        	$xml->encontrado = false;
-		        	$xml->xml_faltante = $uuid;
-		        }		        		
-
-		        array_push($xmls_padre, $xml);
-
-		    } catch(PDOException $e){
-		        $mensaje = array(
-		            'status' => false,
-		            'mensaje' => 'Xmls no cargados desde busqueda padres',
-		            'error' => $e->getMessage()
-		        );
-		        return json_encode($mensaje);
-		    }
-		}
-	}
-	$consulta = "SELECT * FROM `docto-xml` WHERE idusuario='$idusuario' ";
-	try{
-		// Instanciar la base de datos
-		$db = new db();
-		// Conexión
-		$db = $db->connect();
-		$ejecutar = $db->query($consulta);
-		$xmls = $ejecutar->fetchAll(PDO::FETCH_OBJ);
-		$db = null;
-		// Bucle donde se convierte a JSON
-        for ($i=0; $i < count($xmls) ; $i++) { 
-        	$xmls[$i]->Complementos = json_decode($xmls[$i]->Complementos);
-        	$xmls[$i]->Conceptos = json_decode($xmls[$i]->Conceptos);
-        	$xmls[$i]->Emisor = json_decode($xmls[$i]->Emisor);
-        	$xmls[$i]->Impuestos = json_decode($xmls[$i]->Impuestos);
-        	$xmls[$i]->Receptor = json_decode($xmls[$i]->Receptor);
-        	$xmls[$i]->Otros = json_decode($xmls[$i]->Otros);
-        	$xmls[$i]->UUIDS_relacionados = json_decode($xmls[$i]->UUIDS_relacionados);
-        }
-        if( is_string($uuids) ){
-        	$xmls_relacionados = [];
-        	// Buscamos dentro de los xml una que este relacionada a esta factura
-	        for ($i=0; $i < count($xmls) ; $i++) {
-	        	if( $xmls[$i]->TipoDeComprobante === 'P' ){
-	        		for ($j=0; $j < count( $xmls[$i]->Complementos->Pagos ) ; $j++) {
-	        			for ($k=0; $k < count( $xmls[$i]->Complementos->Pagos[$j]->documentos ) ; $k++) { 
-	        				if( $xmls[$i]->Complementos->Pagos[$j]->documentos[$k]->IdDocumento === $xml->UUID ){
-	        					array_push($xmls_relacionados, $xmls[$i]);
-	        				}
-	        			}
-	        		}
-	        	}else{
-		        	for ($j=0; $j < count($xmls[$i]) ; $j++) {
-		        		if( $xmls[$i]->UUIDS_relacionados[$j] === $xml->UUID ){
-		        			array_push($xmls_relacionados, $xmls[$i]);
-		        		}
-		        	}
-	        	}
-	        }
-	        $xml_padre->relaciones = $xmls_relacionados;
-	        return $xml_padre;
-        }else{
-        	for ($o=0; $o < count($xmls_padre) ; $o++) { 
-        		$xmls_relacionados = [];
-	        	// Buscamos dentro de los xml una que este relacionada a esta factura
-	        	if( $xmls_padre[$o]->encontrado === false ){
-
-	        	}else{
-	        		for ($i=0; $i < count($xmls) ; $i++) {
+			        // Conexión
+			        $db = $db->connect();
+			        $ejecutar = $db->query($consulta);
+			        $xmls = $ejecutar->fetchAll(PDO::FETCH_OBJ);
+			        $db = null;
+			        // Bucle donde se convierte a JSON
+			        for ($i=0; $i < count($xmls) ; $i++) { 
+			        	$xmls[$i]->Complementos = json_decode($xmls[$i]->Complementos);
+			        	$xmls[$i]->Conceptos = json_decode($xmls[$i]->Conceptos);
+			        	$xmls[$i]->Emisor = json_decode($xmls[$i]->Emisor);
+			        	$xmls[$i]->Impuestos = json_decode($xmls[$i]->Impuestos);
+			        	$xmls[$i]->Receptor = json_decode($xmls[$i]->Receptor);
+			        	$xmls[$i]->Otros = json_decode($xmls[$i]->Otros);
+			        	$xmls[$i]->UUIDS_relacionados = json_decode($xmls[$i]->UUIDS_relacionados);
+			        }
+			        // Buscamos dentro de los xml una que este relacionada a esta factura
+			        for ($i=0; $i < count($xmls) ; $i++) {
 			        	if( $xmls[$i]->TipoDeComprobante === 'P' ){
 			        		for ($j=0; $j < count( $xmls[$i]->Complementos->Pagos ) ; $j++) {
 			        			for ($k=0; $k < count( $xmls[$i]->Complementos->Pagos[$j]->documentos ) ; $k++) { 
-			        				if( $xmls[$i]->Complementos->Pagos[$j]->documentos[$k]->IdDocumento === $xmls_padre[$o]->UUID ){
+			        				if( $xmls[$i]->Complementos->Pagos[$j]->documentos[$k]->IdDocumento === $xml->UUID ){
 			        					array_push($xmls_relacionados, $xmls[$i]);
 			        				}
 			        			}
@@ -315,17 +243,65 @@ function obtenerInfoPadre($idusuario,$uuids){
 				        	}
 			        	}
 			        }
-		        $xmls_padre[$o]->relaciones = $xmls_relacionados;			        
-	        	}		        
-		        return $xmls_padre;
-        	}
-        }
-    } catch(PDOException $e){
-        $mensaje = array(
-            'status' => false,
-            'mensaje' => 'Xmls no cargados',
-            'error' => $e->getMessage()
-        );
-        return json_encode($mensaje);
-    }
+			        //Exportar y mostrar en formato JSON
+			        $xml->relaciones = $xmls_relacionados;
+			        return $xml;
+			    } catch(PDOException $e){
+			        $mensaje = array(
+			            'status' => false,
+			            'mensaje' => 'Xmls no cargados',
+			            'error' => $e->getMessage()
+			        );
+			        return json_encode($mensaje);
+			    }
+	    	}
+
+	    } catch(PDOException $e){
+	        $mensaje = array(
+	            'status' => false,
+	            'mensaje' => 'Xml no cargados',
+	            'error' => $e->getMessage()
+	        );
+	        return json_encode($mensaje);
+	    }
+}
+
+function obtenerInformacionCompleta($uuid,$idcliente){
+	$factura_padre = '';
+	$consulta = "SELECT * FROM `docto-xml` WHERE UUID='$uuid' ";
+	try{
+		// Instanciar la base de datos
+		$db = new db();
+
+		// Conexión
+		$db = $db->connect();
+		$ejecutar = $db->query($consulta);
+		$factura = $ejecutar->fetch(PDO::FETCH_OBJ);
+		$db = null;
+		
+		$factura->Complementos = json_decode($factura->Complementos);
+		$factura->Conceptos = json_decode($factura->Conceptos);
+		$factura->Emisor = json_decode($factura->Emisor);
+		$factura->Impuestos = json_decode($factura->Impuestos);
+		$factura->Receptor = json_decode($factura->Receptor);
+		$factura->Otros = json_decode($factura->Otros);
+		$factura->UUIDS_relacionados = json_decode($factura->UUIDS_relacionados);
+
+	} catch(PDOException $e){
+		$mensaje = array(
+			'status' => false,
+			'mensaje' => 'Error al buscar el docto-xml del uuid enviado',
+			'error' => $e->getMessage()
+		);
+		return json_encode($mensaje);
+	}
+	if( $factura->TipoDeComprobante === 'I'){
+		$xml_padre = $factura;
+	}
+	if( $factura->TipoDeComprobante === 'E'){
+
+	}
+	if( $factura->TipoDeComprobante === 'P'){
+
+	}
 }

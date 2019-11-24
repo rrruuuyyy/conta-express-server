@@ -70,8 +70,14 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
     );
 
     public static $prefixLengthsPsr4 = array (
+        'X' => 
+        array (
+            'XmlSchemaValidator\\' => 19,
+            'XmlResourceRetriever\\' => 21,
+        ),
         'S' => 
         array (
+            'Symfony\\Component\\Process\\' => 26,
             'Slim\\' => 5,
         ),
         'P' => 
@@ -108,10 +114,23 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
         'C' => 
         array (
             'Complex\\' => 8,
+            'CfdiUtils\\' => 10,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
+        'XmlSchemaValidator\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/eclipxe/xmlschemavalidator/src/XmlSchemaValidator',
+        ),
+        'XmlResourceRetriever\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/eclipxe/xmlresourceretriever/src/XmlResourceRetriever',
+        ),
+        'Symfony\\Component\\Process\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/process',
+        ),
         'Slim\\' => 
         array (
             0 => __DIR__ . '/..' . '/slim/slim/Slim',
@@ -171,6 +190,10 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
         'Complex\\' => 
         array (
             0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
+        ),
+        'CfdiUtils\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/eclipxe/cfdiutils/src/CfdiUtils',
         ),
     );
 

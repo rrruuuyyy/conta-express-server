@@ -208,9 +208,9 @@ $app->post('/api/xml/upload', function(Request $request, Response $response){
 		if($xmls[$i]->estado != "error"){
 			if($xmls[$i]->estado === "nuevo"){
 				$sql = "INSERT INTO `docto-xml` 
-				(idcliente,idusuario,TipoDeComprobante,Serie,Folio,FormaPago,SubTotal,Total,Moneda,TipoCambio,MetodoPago,LugarExpedicion,Conceptos,Impuestos,Complementos, Fecha,UUID,deducible,estado,UUIDS_relacionados,Emisor,Receptor,conta,TotalGravado,TotalExento,Descuento,TotalImpuestosRetenidos,TotalImpuestosTrasladados,Otros) 
+				(idcliente,idusuario,TipoDeComprobante,Serie,Folio,FormaPago,SubTotal,Total,Moneda,TipoCambio,MetodoPago,LugarExpedicion,Conceptos,Impuestos,Complementos, Fecha,UUID,deducible,estado,UUIDS_relacionados,Emisor,Receptor,conta,TotalGravado,TotalExento,Descuento,TotalImpuestosRetenidos,TotalImpuestosTrasladados,Otros,Certificado,Sello,status) 
 				values 
-				(:idcliente,:idusuario,:TipoDeComprobante,:Serie,:Folio,:FormaPago,:SubTotal,:Total,:Moneda,:TipoCambio,:MetodoPago,:LugarExpedicion,:Conceptos,:Impuestos,:Complementos,:Fecha,:UUID,:deducible,:estado,:UUIDS_relacionados,:Emisor,:Receptor,:conta,:TotalGravado,:TotalExento,:Descuento,:TotalImpuestosRetenidos,:TotalImpuestosTrasladados,:Otros) " ;
+				(:idcliente,:idusuario,:TipoDeComprobante,:Serie,:Folio,:FormaPago,:SubTotal,:Total,:Moneda,:TipoCambio,:MetodoPago,:LugarExpedicion,:Conceptos,:Impuestos,:Complementos,:Fecha,:UUID,:deducible,:estado,:UUIDS_relacionados,:Emisor,:Receptor,:conta,:TotalGravado,:TotalExento,:Descuento,:TotalImpuestosRetenidos,:TotalImpuestosTrasladados,:Otros,:Certificado,:Sello,:status) " ;
 				try{
 					$conceptos = json_encode($xmls[$i]->Conceptos);
 					$impuestos = json_encode($xmls[$i]->Impuestos);
@@ -252,7 +252,13 @@ $app->post('/api/xml/upload', function(Request $request, Response $response){
 					$stmt->bindParam(':Descuento', $xmls[$i]->Descuento);
 					$stmt->bindParam(':TotalImpuestosRetenidos', $xmls[$i]->TotalImpuestosRetenidos);
 					$stmt->bindParam(':TotalImpuestosTrasladados', $xmls[$i]->TotalImpuestosTrasladados);
+					$status = 'vigente';
 					$stmt->bindParam(':Otros', $Otros);
+					$Certificado = substr($xmls[$i]->Certificado,-8);
+					$Sello = substr($xmls[$i]->Sello,-8);
+					$stmt->bindParam(':Certificado', $Certificado);
+					$stmt->bindParam(':Sello', $Sello);
+					$stmt->bindParam(':status', $status);
 					$stmt->execute();
 			
 				} catch(PDOException $e){
@@ -1154,7 +1160,7 @@ $app->post('/api/xml/archivo', function(Request $request, Response $response){
 	// Fin para el libro de Egresos
 	$spreadsheet->setActiveSheetIndex(0);
 	$writer = new Xlsx($spreadsheet);
-	$cliente['nombre'] =str_replace(' ', '', $$cliente['nombre']);
+	$cliente['nombre'] =str_replace(' ', '', $cliente['nombre']);
 	$nombre_archivo = "Ingresos_Egresos_{$mes}_{$year}".$cliente['nombre'];
 	$name = $nombre_archivo.".xlsx";
 	$carpeta = 'calculos' ;

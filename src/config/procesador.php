@@ -42,10 +42,13 @@
                             //<-------------------------------------- ACCIONES SI EL XML ES DE TIPO INGRESO ----------------------------------->
                             if($xmls[$i]->TipoDeComprobante === 'I'){
                                 $tipo_venta = '';
+                                $porcentaje_pagado = 0;
                                 if( $xmls[$i]->MetodoPago === 'PUE' ){
                                     $tipo_venta = 'contado';
+                                    $porcentaje_pagado = 100;
                                 }else{
                                     $tipo_venta = 'credito';
+                                    $porcentaje_pagado = 0;
                                 }
                                 for ($j=0; $j < count($clientes_cliente); $j++) {
                                     if( $xmls[$i]->Receptor->Rfc === $clientes_cliente[$j]->rfc ){
@@ -54,10 +57,11 @@
                                 }
                                 $uuid = $xmls[$i]->UUID;
                                 $sql = "INSERT INTO venta_cliente 
-                                    (idcliente_cliente,idcliente,iddocto_xml,fecha,forma_pago,total,total_descuento,tipo,uuid) 
+                                    (idcliente_cliente,idcliente,iddocto_xml,fecha,forma_pago,total,total_descuento,tipo,uuid,porcentaje_pagado) 
                                     VALUES 
-                                    (:idcliente_cliente,:idcliente,:iddocto_xml,:fecha,:forma_pago,:total,:total_descuento,:tipo,:uuid)";
+                                    (:idcliente_cliente,:idcliente,:iddocto_xml,:fecha,:forma_pago,:total,:total_descuento,:tipo,:uuid,:porcentaje_pagado)";
                                 try{
+                                    error_reporting(0);
                                     // Get DB Object
                                     $db = new db();
                                     // Connect
@@ -71,7 +75,9 @@
                                     $stmt->bindParam(':total', $xmls[$i]->Total);
                                     $stmt->bindParam(':total_descuento', $xmls[$i]->Total);
                                     $stmt->bindParam(':tipo', $tipo_venta);
-                                    $stmt->bindParam(':uuid', strtoupper($xmls[$i]->UUID));
+                                    $uuid_int = strtoupper($xmls[$i]->UUID);
+                                    $stmt->bindParam(':uuid', $uuid_int);
+                                    $stmt->bindParam(':porcentaje_pagado', $porcentaje_pagado);
                                     $stmt->execute();
     
                                 } catch(PDOException $e){
@@ -97,6 +103,7 @@
                                 }
                                 //<---------------- OBTENER UUIDS DE LAS FACTURAS A LAS QUE SE LE APLICO UN DESCUENTO O DEVOLUCION --------->
                                 if( count($relaciones) === 1 ){
+                                    $total_descuento = 0;
                                     $uuid = $relaciones[0];
                                     $sql_docto = "SELECT * FROM venta_cliente WHERE uuid='$uuid' ";
                                      try{
@@ -125,6 +132,8 @@
                                             $credito_dev->MetodoPago = $xmls[$i]->MetodoPago;
                                             $credito_dev->FormaPago = $xmls[$i]->FormaPago;
                                             $credito_dev->Total = $xmls[$i]->Total;
+                                            //Restamos el total de la devolucion a la factura padre
+                                            $total_descuento = $total_descuento - $xmls[$i]->Total;
                                             $credito_dev->TotalExento = $xmls[$i]->TotalExento;
                                             $credito_dev->TotalGravado = $xmls[$i]->TotalGravado;
                                             $credito_dev->TotalIEPS = $xmls[$i]->TotalIEPS;
@@ -135,7 +144,7 @@
                                             $credito_dev->especificado = true;
                                             array_push( $devoluciones, $credito_dev );
                                             // Obtenemos el total_descuento de la factura padre
-                                            $total_descuento = $compra->total;
+                                            $total_descuento = $venta->total;
                                             for ($o=0; $o < count($devoluciones); $o++) { 
                                                 $total_descuento = $total_descuento - $devoluciones[$o]->Total;
                                             }
@@ -204,6 +213,7 @@
                                     $descuento = 0;
                                     $ventas_encontradas = [];
                                     $ventas_faltantes = 0;
+                                    $conceptos = $xmls[$i]->Conceptos;
                                     for ($j=0; $j < count($relaciones); $j++) {
                                         $uuid = $relaciones[$j];
                                         $sql_docto = "SELECT * FROM venta_cliente WHERE uuid = '$uuid' ";
@@ -217,8 +227,25 @@
                                             $db = null;
             
                                             if($venta){
+                                                $uuid_venta = $venta->uuid;
                                                 array_push($ventas_encontradas,$venta);
-                                                
+                                                $sql_venta_int = "SELECT Serie, Folio, UUID FROM `docto-xml` WHERE UUID = '$uuid_venta' ";
+                                                try{
+                                                    // Instanciar la base de datos
+                                                    $db3 = new db();
+                                                    // Conexión
+                                                    $db3 = $db3->connect();
+                                                    $ejecutar3 = $db3->query($sql_venta_int);
+                                                    $venta->xml = $ejecutar3->fetch(PDO::FETCH_OBJ);
+                                                    $db3 = null;                                           
+                                                } catch(PDOException $e){
+                                                    $mensaje = array(
+                                                        'status' => false,
+                                                        'mensaje' => 'Error al buscar docto-xml dentro de las ventas encontradas de las notas de credito',
+                                                        'error' => $e->getMessage()
+                                                    );
+                                                    return json_encode($mensaje);
+                                                }
                                             }else{
                                                 $ventas_faltantes = $ventas_faltantes + 1;
                                             }                                            
@@ -234,85 +261,103 @@
                                     //Aqui empezamos a desglosar los encontrados y no encontrados
                                     // Inicio del guardado en la base de datos los creditos o devoluciones encontradas
                                     $resuelto = 'true';
-                                    for ($j=0; $j < count($ventas_encontradas); $j++) { 
-                                        # code...
-                                        $sql_credito = "INSERT INTO `credito_devolucion_venta` (idventa_cliente,iddocto_xml,idcliente_cliente,idcliente,total,forma_pago,fecha,resuelto,uuid_padre) VALUES (:idventa_cliente,:iddocto_xml,:idcliente_cliente,:idcliente,:total,:forma_pago,:fecha,:resuelto,:uuid_padre)";
-                                        try{
-                                            // Get DB Object
-                                            $db = new db();
-                                            // Connect
-                                            $db = $db->connect();
-                                            $stmt = $db->prepare($sql_credito);
-                                            $stmt->bindParam(':idventa_cliente', $ventas_encontradas[$j]->idventa_cliente);
-                                            $stmt->bindParam(':iddocto_xml', $xmls[$i]->iddocto_xml);
-                                            $stmt->bindParam(':idcliente_cliente', $cliente_cliente->idcliente_cliente);
-                                            $stmt->bindParam(':idcliente', $cliente_cliente->idcliente);
-                                            if($total_descuento <= 0.0){
-                                                $descuento = 0.0;
-                                            }else{
-                                                if( $total_descuento >=  $ventas_encontradas[$j]->total ){
-                                                    $descuento = $ventas_encontradas[$j]->total;
-                                                    $total_descuento = $total_descuento - $descuento;
-                                                }else{
-                                                    $descuento = $ventas_encontradas[$j]->total;
-                                                    $total_descuento = $total_descuento - $descuento;
+                                    for ($j=0; $j < count($ventas_encontradas); $j++) {
+                                        for ($o=0; $o < count($conceptos); $o++) { 
+                                            $array_conceptos = explode(' ', $conceptos[$o]->Descripcion);
+                                            for ($l=0; $l < count($array_conceptos) ; $l++) {
+                                                $array_conceptos[$l] = strtoupper($array_conceptos[$l]);
+                                                $Serie = strtoupper($compras_encontradas[$j]->xml->Serie);
+                                                $Folio = strtoupper($compras_encontradas[$j]->xml->Folio);
+                                                $UUID = strtoupper($compras_encontradas[$j]->xml->UUID);
+                                                $encontrada = false;
+                                                if( $array_conceptos[$l] === "{$Serie}-{$Folio}" || $array_conceptos[$l] === "{$Serie}{$Folio}" || $array_conceptos[$l] === "{$Serie}.{$Folio}" || $array_conceptos[$l] === $UUID){
+                                                    //Hasta aqui tenemos que la en $compras_encontradas choca con un concepto de una nota de credito multiple
+                                                    $encontrada = true;
                                                 }
-                                            }
-                                            $stmt->bindParam(':total', $descuento);
-                                            $stmt->bindParam(':forma_pago', $xmls[$i]->FormaPago);
-                                            $stmt->bindParam(':fecha', $xmls[$i]->Fecha);
-                                            $resuelto = 'true';
-                                            $stmt->bindParam(':resuelto', $resuelto);
-                                            $stmt->bindParam(':uuid_padre',$relaciones[$j]);                                            
-                                            $stmt->execute();
-                                            //Guardamos dentro de la factura padre el credito incompleto
-                                            if( is_string( $ventas_encontradas[$j]->credito_dev ) ){
-                                                $devoluciones = [];
-                                            }else{
-                                                $devoluciones = json_decode( $ventas_encontradas[$j]->credito_dev );
-                                            }
-                                            $idventa_cliente = $ventas_encontradas[$j]->idventa_cliente;
-                                            $credito_dev = (object)[];
-                                            $credito_dev->MetodoPago = $xmls[$i]->MetodoPago;
-                                            $credito_dev->FormaPago = $xmls[$i]->FormaPago;
-                                            $credito_dev->UUID_tipo_relacion = $xmls[$i]->UUID_tipo_relacion;
-                                            $credito_dev->Total = $descuento;
-                                            $credito_dev->uuid = $xmls[$i]->UUID;
-                                            $credito_dev->especificado = false;
-                                            array_push( $devoluciones, $credito_dev );
-                                            $devoluciones = json_encode($devoluciones);
-                                            //Modificamos la factura venta_cliente para guardar si el credito o devolucion viene especificada la devolucion
-                                            $sql_venta = "UPDATE venta_cliente SET
-                                                credito_dev = :credito_dev
-                                            WHERE idventa_cliente = '$idventa_cliente'";
-                                            try{
-                                                $db = new db();
-                                                $db = $db->connect();
-                                                $stmt = $db->prepare($sql_venta);
-                                                $stmt->bindParam(':credito_dev', $devoluciones);
-                                                $stmt->execute();                                        
-                                            } catch(PDOException $e){
-                                                $mensaje = array(
-                                                    'status' => false,
-                                                    'mensaje' => 'Error al convertir la devolucion en string y guardarla dentro de la venta padre cuando hay muchas relaciones',
-                                                    'error' => $e->getMessage()
-                                                );
-                                                return $mensaje;
-                                            }
+                                                if( $encontrada === true ){                                            
+                                                    $sql_credito = "INSERT INTO `credito_devolucion_venta` (idventa_cliente,iddocto_xml,idproveedor_cliente,idcliente,total,forma_pago,fecha,resuelto,uuid_padre) VALUES (:idventa_cliente,:iddocto_xml,:idproveedor_cliente,:idcliente,:total,:forma_pago,:fecha,:resuelto,:uuid_padre)";
+                                                    try{
+                                                        // Get DB Object
+                                                        $db = new db();
+                                                        // Connect
+                                                        $db = $db->connect();
+                                                        $stmt = $db->prepare($sql_credito);
+                                                        $stmt->bindParam(':idventa_cliente', $ventas_encontradas[$j]->idventa_cliente);
+                                                        $stmt->bindParam(':iddocto_xml', $xmls[$i]->iddocto_xml);
+                                                        $stmt->bindParam(':idproveedor_cliente', $proveedor_cliente->idproveedor_cliente);
+                                                        $stmt->bindParam(':idcliente', $proveedor_cliente->idcliente);
+                                                        $descuento = $conceptos[$o]->Importe;
+                                                        $stmt->bindParam(':total', $descuento);
+                                                        $stmt->bindParam(':forma_pago', $xmls[$i]->FormaPago);
+                                                        $stmt->bindParam(':fecha', $xmls[$i]->Fecha);
+                                                        $resuelto = 'true';
+                                                        $stmt->bindParam(':resuelto', $resuelto);
+                                                        $stmt->bindParam(':uuid_padre',$relaciones[$j]);                                            
+                                                        $stmt->execute();
+                                                        //Guardamos dentro de la factura padre el credito incompleto
+                                                        if( $venta->credito_dev === null  ){
+                                                            $devoluciones = [];
+                                                        }else{
+                                                            $devoluciones = json_decode( $ventas_encontradas[$j]->credito_dev );
+                                                        }
+                                                        $idventa_cliente = $ventas_encontradas[$j]->idventa_cliente;
+                                                        $credito_dev = (object)[];
+                                                        $credito_dev->MetodoPago = $xmls[$i]->MetodoPago;
+                                                        $credito_dev->FormaPago = $xmls[$i]->FormaPago;
+                                                        $credito_dev->UUID_tipo_relacion = $xmls[$i]->UUID_tipo_relacion;
+                                                        $credito_dev->Total = $descuento;
+                                                        $credito_dev->Concepto = $conceptos[$o];
+                                                        $credito_dev->uuid = $xmls[$i]->UUID;
+                                                        $credito_dev->especificado = false;
+                                                        array_push( $devoluciones, $credito_dev );
+                                                        $devoluciones = json_encode($devoluciones);
+                                                        // Creamos la variable donde guardaremos el total del descuento de la factura padre y le restaremos el descuento
+                                                        $descuento_padre = $ventas_encontradas[$j]->total_descuento;
+                                                        $descuento_padre = $descuento_padre - $descuento;
+                                                        //Modificamos la factura venta_cliente para guardar si el credito o devolucion viene especificada la devolucion
+                                                        $sql_venta = "UPDATE venta_cliente SET
+                                                            credito_dev = :credito_dev,
+                                                            total_descuento = :total_descuento
+                                                        WHERE idventa_cliente = '$idventa_cliente'";
+                                                        try{
+                                                            $db = new db();
+                                                            $db = $db->connect();
+                                                            $stmt = $db->prepare($sql_venta);
+                                                            $stmt->bindParam(':credito_dev', $devoluciones);
+                                                            $stmt->bindParam(':total_descuento', $descuento_padre);
+                                                            $stmt->execute();                                        
+                                                        } catch(PDOException $e){
+                                                            $mensaje = array(
+                                                                'status' => false,
+                                                                'mensaje' => 'Error al convertir la devolucion en string y guardarla dentro de la venta padre cuando hay muchas relaciones',
+                                                                'error' => $e->getMessage()
+                                                            );
+                                                            return $mensaje;
+                                                        }
 
-                                        } catch(PDOException $e){
-                                            $mensaje = array(
-                                                'status' => false,
-                                                'mensaje' => 'Error al crear el credito o devolucion en multiples documentos relacionados',
-                                                'error' => $e->getMessage()
-                                            );
-                                            return $mensaje;
+                                                    } catch(PDOException $e){
+                                                        $mensaje = array(
+                                                            'status' => false,
+                                                            'mensaje' => 'Error al crear el credito o devolucion en multiples documentos relacionados',
+                                                            'error' => $e->getMessage()
+                                                        );
+                                                        return $mensaje;
+                                                    }
+                                                }else{
+                                                    //Que pasa si no se encuentra la factura
+                                                }
+
+
+
+                                            }
                                         }
                                     }
                                     // Inicio del guardado en la base de datos los creditos o devoluciones no encontradas
                                     $resuleto = 'false';
-                                    $descuento = $total_descuento / count($ventas_faltantes);
-                                    for ($j=0; $j < count($ventas_faltantes); $j++) { 
+                                    error_reporting(0);
+                                    $descuento = $total_descuento / $ventas_faltantes;
+                                    error_reporting(-1);
+                                    for ($j=0; $j < $ventas_faltantes; $j++) { 
                                         # code...
                                         $sql = "INSERT INTO credito_devolucion_venta (iddocto_xml,idcliente_cliente,idcliente,total,forma_pago,fecha,resuelto,uuid_padre) 
                                         VALUES 
@@ -366,7 +411,7 @@
                                         # code...
                                         $pago = $xmls[$i]->Complementos->Pagos[$o]->documentos[$l];
                                         $pago->forma_pago = $xmls[$i]->Complementos->Pagos[$o]->FormaDePagoP;
-                                        $pago->fecha = $xmls[$i]->Complementos->Pagos[$o]->FechaPago;
+                                        $pago->fecha = $xmls[$i]->Fecha;
                                         array_push($pagos,$pago);
                                     }
                                 }
@@ -453,7 +498,9 @@
                                         }
                                         $stmt->bindParam(':idventa_cliente', $idventa_cliente );
                                         $stmt->bindParam(':resuelto', $resuelto );
+                                        error_reporting(0);
                                         $porcentaje = ( ( floatval($pagos[$o]->ImpPagado) / floatval($pagos[$o]->venta->total_descuento) ) * 100 );								
+                                        error_reporting(-1);
                                         $stmt->bindParam(':porcentaje', $porcentaje );							
                                         $stmt->execute();
         
@@ -519,10 +566,13 @@
                             //<-------------------------------------- ACCIONES SI EL XML ES DE TIPO INGRESO ----------------------------------->
                             if($xmls[$i]->TipoDeComprobante === 'I'){
                                 $tipo_compra = '';
+                                $porcentaje_pagado = 0;
                                 if( $xmls[$i]->MetodoPago === 'PUE' ){
                                     $tipo_compra = 'contado';
+                                    $porcentaje_pagado = 100;
                                 }else{
                                     $tipo_compra = 'credito';
+                                    $porcentaje_pagado = 0;
                                 }
                                 for ($j=0; $j < count($proveedores_cliente); $j++) {
                                     if( $xmls[$i]->Emisor->Rfc === $proveedores_cliente[$j]->rfc ){
@@ -531,9 +581,9 @@
                                 }
                                 $uuid = $xmls[$i]->UUID;
                                 $sql = "INSERT INTO compra_cliente 
-                                (idproveedor_cliente,idcliente,iddocto_xml,fecha,forma_pago,total,total_descuento,tipo,uuid) 
+                                (idproveedor_cliente,idcliente,iddocto_xml,fecha,forma_pago,total,total_descuento,tipo,uuid,porcentaje_pagado) 
                                 VALUES 
-                                (:idproveedor_cliente,:idcliente,:iddocto_xml,:fecha,:forma_pago,:total,:total_descuento,:tipo,:uuid)";
+                                (:idproveedor_cliente,:idcliente,:iddocto_xml,:fecha,:forma_pago,:total,:total_descuento,:tipo,:uuid,:porcentaje_pagado)";
                                 try{
                                     // Get DB Object
                                     $db = new db();
@@ -548,7 +598,9 @@
                                     $stmt->bindParam(':total', $xmls[$i]->Total);
                                     $stmt->bindParam(':total_descuento', $xmls[$i]->Total);
                                     $stmt->bindParam(':tipo', $tipo_compra);
-                                    $stmt->bindParam(':uuid', strtoupper($xmls[$i]->UUID));
+                                    $uuid_int = strtoupper($xmls[$i]->UUID);
+                                    $stmt->bindParam(':uuid',$uuid_int);                        
+                                    $stmt->bindParam(':porcentaje_pagado',$porcentaje_pagado);
                                     $stmt->execute();
     
                                 } catch(PDOException $e){
@@ -574,6 +626,7 @@
                                 }
                                 //<---------------- OBTENER UUIDS DE LAS FACTURAS A LAS QUE SE LE APLICO UN DESCUENTO O DEVOLUCION --------->
                                 if( count($relaciones) === 1 ){
+                                    $total_descuento = 0;
                                     $uuid = $relaciones[0];
                                     $sql_docto = "SELECT * FROM compra_cliente WHERE uuid='$uuid' ";
                                      try{
@@ -683,6 +736,7 @@
                                     $descuento = 0;
                                     $compras_encontradas = [];
                                     $compras_faltantes = 0;
+                                    $conceptos = $xmls[$i]->Conceptos;
                                     for ($j=0; $j < count($relaciones); $j++) {
                                         $uuid = $relaciones[$j];
                                         $sql_docto = "SELECT * FROM compra_cliente WHERE uuid = '$uuid' ";
@@ -696,6 +750,24 @@
                                             $db = null;
             
                                             if($compra){
+                                                $uuid_compra = $compra->uuid;
+                                                $sql_compra_int = "SELECT Serie, Folio, UUID FROM `docto-xml` WHERE UUID = '$uuid_compra' ";
+                                                try{
+                                                    // Instanciar la base de datos
+                                                    $db3 = new db();
+                                                    // Conexión
+                                                    $db3 = $db3->connect();
+                                                    $ejecutar3 = $db3->query($sql_compra_int);
+                                                    $compra->xml = $ejecutar3->fetch(PDO::FETCH_OBJ);
+                                                    $db3 = null;                                           
+                                                } catch(PDOException $e){
+                                                    $mensaje = array(
+                                                        'status' => false,
+                                                        'mensaje' => 'Error al buscar docto-xml dentro de las compras encontradas de las notas de credito',
+                                                        'error' => $e->getMessage()
+                                                    );
+                                                    return json_encode($mensaje);
+                                                }
                                                 array_push($compras_encontradas,$compra);
                                                 
                                             }else{
@@ -712,91 +784,103 @@
                                     }
                                     //Aqui empezamos a desglosar los encontrados y no encontrados
                                     // Inicio del guardado en la base de datos los creditos o devoluciones encontradas
-                                    $resuelto = 'true';
-                                    for ($j=0; $j < count($compras_encontradas); $j++) { 
-                                        # code...
-                                        $sql_credito = "INSERT INTO `credito_devolucion_compra` (idcompra_cliente,iddocto_xml,idproveedor_cliente,idcliente,total,forma_pago,fecha,resuelto,uuid_padre) VALUES (:idcompra_cliente,:iddocto_xml,:idproveedor_cliente,:idcliente,:total,:forma_pago,:fecha,:resuelto,:uuid_padre)";
-                                        try{
-                                            // Get DB Object
-                                            $db = new db();
-                                            // Connect
-                                            $db = $db->connect();
-                                            $stmt = $db->prepare($sql_credito);
-                                            $stmt->bindParam(':idcompra_cliente', $compras_encontradas[$j]->idcompra_cliente);
-                                            $stmt->bindParam(':iddocto_xml', $xmls[$i]->iddocto_xml);
-                                            $stmt->bindParam(':idproveedor_cliente', $proveedor_cliente->idproveedor_cliente);
-                                            $stmt->bindParam(':idcliente', $proveedor_cliente->idcliente);
-                                            if($total_descuento <= 0.0){
-                                                $descuento = 0.0;
-                                            }else{
-                                                if( $total_descuento >=  $compras_encontradas[$j]->total ){
-                                                    $descuento = $compras_encontradas[$j]->total;
-                                                    $total_descuento = $total_descuento - $descuento;
+                                    $resuelto = 'true';                                    
+                                    for ($j=0; $j < count($compras_encontradas); $j++) {
+                                        for ($o=0; $o < count($conceptos); $o++) { 
+                                            $array_conceptos = explode(' ', $conceptos[$o]->Descripcion);
+                                            for ($l=0; $l < count($array_conceptos) ; $l++) {
+                                                $array_conceptos[$l] = strtoupper($array_conceptos[$l]);
+                                                $Serie = strtoupper($compras_encontradas[$j]->xml->Serie);
+                                                $Folio = strtoupper($compras_encontradas[$j]->xml->Folio);
+                                                $UUID = strtoupper($compras_encontradas[$j]->xml->UUID);
+                                                $encontrada = false;
+                                                if( $array_conceptos[$l] === "{$Serie}-{$Folio}" || $array_conceptos[$l] === "{$Serie}{$Folio}" || $array_conceptos[$l] === "{$Serie}.{$Folio}" || $array_conceptos[$l] === $UUID){
+                                                    //Hasta aqui tenemos que la en $compras_encontradas choca con un concepto de una nota de credito multiple
+                                                    $encontrada = true;
+                                                }
+                                                if( $encontrada === true ){                                            
+                                                    $sql_credito = "INSERT INTO `credito_devolucion_compra` (idcompra_cliente,iddocto_xml,idproveedor_cliente,idcliente,total,forma_pago,fecha,resuelto,uuid_padre) VALUES (:idcompra_cliente,:iddocto_xml,:idproveedor_cliente,:idcliente,:total,:forma_pago,:fecha,:resuelto,:uuid_padre)";
+                                                    try{
+                                                        // Get DB Object
+                                                        $db = new db();
+                                                        // Connect
+                                                        $db = $db->connect();
+                                                        $stmt = $db->prepare($sql_credito);
+                                                        $stmt->bindParam(':idcompra_cliente', $compras_encontradas[$j]->idcompra_cliente);
+                                                        $stmt->bindParam(':iddocto_xml', $xmls[$i]->iddocto_xml);
+                                                        $stmt->bindParam(':idproveedor_cliente', $proveedor_cliente->idproveedor_cliente);
+                                                        $stmt->bindParam(':idcliente', $proveedor_cliente->idcliente);
+                                                        $descuento = $conceptos[$o]->Importe;
+                                                        $stmt->bindParam(':total', $descuento);
+                                                        $stmt->bindParam(':forma_pago', $xmls[$i]->FormaPago);
+                                                        $stmt->bindParam(':fecha', $xmls[$i]->Fecha);
+                                                        $resuelto = 'true';
+                                                        $stmt->bindParam(':resuelto', $resuelto);
+                                                        $stmt->bindParam(':uuid_padre',$relaciones[$j]);                                            
+                                                        $stmt->execute();
+                                                        //Guardamos dentro de la factura padre el credito incompleto
+                                                        if( $compra->credito_dev === null  ){
+                                                            $devoluciones = [];
+                                                        }else{
+                                                            $devoluciones = json_decode( $compras_encontradas[$j]->credito_dev );
+                                                        }
+                                                        $idcompra_cliente = $compras_encontradas[$j]->idcompra_cliente;
+                                                        $credito_dev = (object)[];
+                                                        $credito_dev->MetodoPago = $xmls[$i]->MetodoPago;
+                                                        $credito_dev->FormaPago = $xmls[$i]->FormaPago;
+                                                        $credito_dev->UUID_tipo_relacion = $xmls[$i]->UUID_tipo_relacion;
+                                                        $credito_dev->Total = $descuento;
+                                                        $credito_dev->Concepto = $conceptos[$o];
+                                                        $credito_dev->uuid = $xmls[$i]->UUID;
+                                                        $credito_dev->especificado = false;
+                                                        array_push( $devoluciones, $credito_dev );
+                                                        $devoluciones = json_encode($devoluciones);
+                                                        // Creamos la variable donde guardaremos el total del descuento de la factura padre y le restaremos el descuento
+                                                        $descuento_padre = $compras_encontradas[$j]->total_descuento;
+                                                        $descuento_padre = $descuento_padre - $descuento;
+                                                        //Modificamos la factura compra_cliente para guardar si el credito o devolucion viene especificada la devolucion
+                                                        $sql_compra = "UPDATE compra_cliente SET
+                                                            credito_dev = :credito_dev,
+                                                            total_descuento = :total_descuento
+                                                        WHERE idcompra_cliente = '$idcompra_cliente'";
+                                                        try{
+                                                            $db = new db();
+                                                            $db = $db->connect();
+                                                            $stmt = $db->prepare($sql_compra);
+                                                            $stmt->bindParam(':credito_dev', $devoluciones);
+                                                            $stmt->bindParam(':total_descuento', $descuento_padre);
+                                                            $stmt->execute();                                        
+                                                        } catch(PDOException $e){
+                                                            $mensaje = array(
+                                                                'status' => false,
+                                                                'mensaje' => 'Error al convertir la devolucion en string y guardarla dentro de la compra padre cuando hay muchas relaciones',
+                                                                'error' => $e->getMessage()
+                                                            );
+                                                            return $mensaje;
+                                                        }
+
+                                                    } catch(PDOException $e){
+                                                        $mensaje = array(
+                                                            'status' => false,
+                                                            'mensaje' => 'Error al crear el credito o devolucion en multiples documentos relacionados',
+                                                            'error' => $e->getMessage()
+                                                        );
+                                                        return $mensaje;
+                                                    }
                                                 }else{
-                                                    $descuento = $compras_encontradas[$j]->total;
-                                                    $total_descuento = $total_descuento - $descuento;
+                                                    //Que pasa si no se encuentra la factura
                                                 }
                                             }
-                                            $stmt->bindParam(':total', $descuento);
-                                            $stmt->bindParam(':forma_pago', $xmls[$i]->FormaPago);
-                                            $stmt->bindParam(':fecha', $xmls[$i]->Fecha);
-                                            $resuelto = 'true';
-                                            $stmt->bindParam(':resuelto', $resuelto);
-                                            $stmt->bindParam(':uuid_padre',$relaciones[$j]);                                            
-                                            $stmt->execute();
-                                            //Guardamos dentro de la factura padre el credito incompleto
-                                            if( $compra->credito_dev === null  ){
-                                                $devoluciones = [];
-                                            }else{
-                                                $devoluciones = json_decode( $compras_encontradas[$j]->credito_dev );
-                                            }
-                                            $idcompra_cliente = $compras_encontradas[$j]->idcompra_cliente;
-                                            $credito_dev = (object)[];
-                                            $credito_dev->MetodoPago = $xmls[$i]->MetodoPago;
-                                            $credito_dev->FormaPago = $xmls[$i]->FormaPago;
-                                            $credito_dev->UUID_tipo_relacion = $xmls[$i]->UUID_tipo_relacion;
-                                            $credito_dev->Total = $descuento;
-                                            $credito_dev->uuid = $xmls[$i]->UUID;
-                                            $credito_dev->especificado = false;
-                                            array_push( $devoluciones, $credito_dev );
-                                            $devoluciones = json_encode($devoluciones);
-                                            // Creamos la variable donde guardaremos el total del descuento de la factura padre y le restaremos el descuento
-                                            $descuento_padre = $compras_encontradas[$i]->total_decuento;
-                                            $descuento_padre = $descuento_padre - $xmls[$i]->Total;
-                                            //Modificamos la factura compra_cliente para guardar si el credito o devolucion viene especificada la devolucion
-                                            $sql_compra = "UPDATE compra_cliente SET
-                                                credito_dev = :credito_dev,
-                                                total_descuento = :total_descuento
-                                            WHERE idcompra_cliente = '$idcompra_cliente'";
-                                            try{
-                                                $db = new db();
-                                                $db = $db->connect();
-                                                $stmt = $db->prepare($sql_compra);
-                                                $stmt->bindParam(':credito_dev', $devoluciones);
-                                                $stmt->bindParam(':total_descuento', $descuento_padre);
-                                                $stmt->execute();                                        
-                                            } catch(PDOException $e){
-                                                $mensaje = array(
-                                                    'status' => false,
-                                                    'mensaje' => 'Error al convertir la devolucion en string y guardarla dentro de la compra padre cuando hay muchas relaciones',
-                                                    'error' => $e->getMessage()
-                                                );
-                                                return $mensaje;
-                                            }
-
-                                        } catch(PDOException $e){
-                                            $mensaje = array(
-                                                'status' => false,
-                                                'mensaje' => 'Error al crear el credito o devolucion en multiples documentos relacionados',
-                                                'error' => $e->getMessage()
-                                            );
-                                            return $mensaje;
                                         }
                                     }
                                     // Inicio del guardado en la base de datos los creditos o devoluciones no encontradas
                                     $resuleto = 'false';
-                                    $descuento = $total_descuento / count($compras_faltantes);
-                                    for ($j=0; $j < count($compras_faltantes); $j++) { 
+                                    if($total_descuento != 0){
+                                        error_reporting(0);
+                                        $descuento = $total_descuento / $compras_faltantes;
+                                        error_reporting(-1);
+                                    }
+                                    for ($j=0; $j < $compras_faltantes; $j++) { 
                                         # code...
                                         $sql = "INSERT INTO credito_devolucion_compra (iddocto_xml,idproveedor_cliente,idcliente,total,forma_pago,fecha,resuelto,uuid_padre) 
                                         VALUES 
@@ -938,7 +1022,9 @@
                                         }
                                         $stmt->bindParam(':idcompra_cliente', $idcompra_cliente );
                                         $stmt->bindParam(':resuelto', $resuelto );
+                                        error_reporting(0);
                                         $porcentaje = ( ( floatval($pagos[$o]->ImpPagado) / floatval($pagos[$o]->compra->total_descuento) ) * 100 );								
+                                        error_reporting(-1);
                                         $stmt->bindParam(':porcentaje', $porcentaje );							
                                         $stmt->execute();
         
