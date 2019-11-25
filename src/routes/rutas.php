@@ -17,6 +17,7 @@ require 'proveedores_cliente.php';
 require 'info.php';
 require 'pendientes.php';
 require 'certificado.php';
+require 'notificaciones.php';
 $app->get('/api/', function(Request $request, Response $response){
     $mensaje = array(
         'status' => true,

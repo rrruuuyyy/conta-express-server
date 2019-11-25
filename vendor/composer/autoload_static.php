@@ -70,6 +70,10 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
     );
 
     public static $prefixLengthsPsr4 = array (
+        't' => 
+        array (
+            'tests\\' => 6,
+        ),
         'X' => 
         array (
             'XmlSchemaValidator\\' => 19,
@@ -79,6 +83,7 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
         array (
             'Symfony\\Component\\Process\\' => 26,
             'Slim\\' => 5,
+            'SWServices\\' => 11,
         ),
         'P' => 
         array (
@@ -119,6 +124,10 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
     );
 
     public static $prefixDirsPsr4 = array (
+        'tests\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/lunasoft/sw-sdk-php/tests',
+        ),
         'XmlSchemaValidator\\' => 
         array (
             0 => __DIR__ . '/..' . '/eclipxe/xmlschemavalidator/src/XmlSchemaValidator',
@@ -134,6 +143,10 @@ class ComposerStaticInitc150de77394b5d3882696242ee923070
         'Slim\\' => 
         array (
             0 => __DIR__ . '/..' . '/slim/slim/Slim',
+        ),
+        'SWServices\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/lunasoft/sw-sdk-php/SWServices',
         ),
         'Psr\\SimpleCache\\' => 
         array (

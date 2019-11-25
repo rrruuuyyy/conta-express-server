@@ -6,10 +6,12 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'tests\\' => array($vendorDir . '/lunasoft/sw-sdk-php/tests'),
     'XmlSchemaValidator\\' => array($vendorDir . '/eclipxe/xmlschemavalidator/src/XmlSchemaValidator'),
     'XmlResourceRetriever\\' => array($vendorDir . '/eclipxe/xmlresourceretriever/src/XmlResourceRetriever'),
     'Symfony\\Component\\Process\\' => array($vendorDir . '/symfony/process'),
     'Slim\\' => array($vendorDir . '/slim/slim/Slim'),
+    'SWServices\\' => array($vendorDir . '/lunasoft/sw-sdk-php/SWServices'),
     'Psr\\SimpleCache\\' => array($vendorDir . '/psr/simple-cache/src'),
     'Psr\\Log\\' => array($vendorDir . '/psr/log/Psr/Log'),
     'Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-message/src'),
