@@ -3,6 +3,7 @@ header('Content-Type: application/json; charset=UTF-8');
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
+
 require '../vendor/autoload.php';
 require '../src/config/db.php';
 require '../src/config/auth.php';
@@ -12,6 +13,8 @@ require '../src/config/idCreator.php';
 require '../src/config/pdfCreator.php';
 require '../src/config/conversorNumero.php';
 require '../src/config/procesador.php';
+require '../src/config/GuzzleWebClient.php';
+
 
 $app = new \Slim\App;
 $app->add(function ($req, $res, $next) {

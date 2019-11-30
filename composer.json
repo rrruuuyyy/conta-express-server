@@ -7,6 +7,22 @@
         "mpdf/mpdf": "^7.1",
         "phpmailer/phpmailer": "^6.0",
         "eclipxe/cfdiutils": "^2.12",
-        "lunasoft/sw-sdk-php": "dev-master"
+        "lunasoft/sw-sdk-php": "dev-master",
+        "phpcfdi/sat-ws-descarga-masiva": "^0.2.3",
+        "ext-openssl": "*",
+        "ext-dom": "*",
+        "ext-json": "*",
+        "ext-zip": "*",
+        "phpcfdi/credentials": "^1.1",
+        "eclipxe/enum": "^0.2.2"
+    },
+    "require-dev": {
+        "guzzlehttp/guzzle": "^6.4",
+        "robrichards/xmlseclibs": "^3.0",
+        "phpunit/phpunit": "^8.0",
+        "overtrue/phplint": "^1.0",
+        "squizlabs/php_codesniffer": "^3.0",
+        "friendsofphp/php-cs-fixer": "^2.4",
+        "phpstan/phpstan-shim": "^0.11"
     }
 }

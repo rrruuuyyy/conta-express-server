@@ -208,9 +208,9 @@ $app->post('/api/xml/upload', function(Request $request, Response $response){
 		if($xmls[$i]->estado != "error"){
 			if($xmls[$i]->estado === "nuevo"){
 				$sql = "INSERT INTO `docto-xml` 
-				(idcliente,idusuario,TipoDeComprobante,Serie,Folio,FormaPago,SubTotal,Total,Moneda,TipoCambio,MetodoPago,LugarExpedicion,Conceptos,Impuestos,Complementos, Fecha,UUID,deducible,estado,UUIDS_relacionados,Emisor,Receptor,conta,TotalGravado,TotalExento,Descuento,TotalImpuestosRetenidos,TotalImpuestosTrasladados,Otros,Certificado,Sello,status) 
+				(idcliente,idusuario,TipoDeComprobante,Serie,Folio,FormaPago,SubTotal,Total,Moneda,TipoCambio,MetodoPago,LugarExpedicion,Conceptos,Impuestos,Complementos, Fecha,UUID,deducible,estado,UUIDS_relacionados,Emisor,Receptor,conta,TotalGravado,TotalExento,Descuento,TotalImpuestosRetenidos,TotalImpuestosTrasladados,Otros,Certificado,Sello,status,FechaHora) 
 				values 
-				(:idcliente,:idusuario,:TipoDeComprobante,:Serie,:Folio,:FormaPago,:SubTotal,:Total,:Moneda,:TipoCambio,:MetodoPago,:LugarExpedicion,:Conceptos,:Impuestos,:Complementos,:Fecha,:UUID,:deducible,:estado,:UUIDS_relacionados,:Emisor,:Receptor,:conta,:TotalGravado,:TotalExento,:Descuento,:TotalImpuestosRetenidos,:TotalImpuestosTrasladados,:Otros,:Certificado,:Sello,:status) " ;
+				(:idcliente,:idusuario,:TipoDeComprobante,:Serie,:Folio,:FormaPago,:SubTotal,:Total,:Moneda,:TipoCambio,:MetodoPago,:LugarExpedicion,:Conceptos,:Impuestos,:Complementos,:Fecha,:UUID,:deducible,:estado,:UUIDS_relacionados,:Emisor,:Receptor,:conta,:TotalGravado,:TotalExento,:Descuento,:TotalImpuestosRetenidos,:TotalImpuestosTrasladados,:Otros,:Certificado,:Sello,:status,:FechaHora) " ;
 				try{
 					$conceptos = json_encode($xmls[$i]->Conceptos);
 					$impuestos = json_encode($xmls[$i]->Impuestos);
@@ -259,6 +259,7 @@ $app->post('/api/xml/upload', function(Request $request, Response $response){
 					$stmt->bindParam(':Certificado', $Certificado);
 					$stmt->bindParam(':Sello', $Sello);
 					$stmt->bindParam(':status', $status);
+					$stmt->bindParam(':FechaHora', $xmls[$i]->FechaTimbrado);
 					$stmt->execute();
 			
 				} catch(PDOException $e){

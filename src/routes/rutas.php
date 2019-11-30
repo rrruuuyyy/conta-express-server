@@ -18,6 +18,7 @@ require 'info.php';
 require 'pendientes.php';
 require 'certificado.php';
 require 'notificaciones.php';
+require 'descarga_masiva.php';
 $app->get('/api/', function(Request $request, Response $response){
     $mensaje = array(
         'status' => true,

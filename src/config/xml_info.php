@@ -26,6 +26,8 @@
                 foreach ($xml->xpath('//cfdi:Comprobante') as $cfdiComprobante){ 
                     $CFDI->Version = "{$cfdiComprobante['Version']}";  
                     $CFDI->Fecha = "{$cfdiComprobante['Fecha']}";  
+                    $CFDI->FechaHora = new DateTime($CFDI->Fecha,new DateTimeZone('America/Monterrey'));  
+                    $CFDI->FechaHora = $CFDI->FechaHora->format('Y-m-d\TH:i:s'); 
                     $CFDI->Sello = "{$cfdiComprobante['Sello']}";  
                     $CFDI->Total = "{$cfdiComprobante['Total']}";  
                     $CFDI->SubTotal = "{$cfdiComprobante['SubTotal']}";  
