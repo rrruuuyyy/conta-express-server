@@ -19,6 +19,9 @@ require 'pendientes.php';
 require 'certificado.php';
 require 'notificaciones.php';
 require 'descarga_masiva.php';
+require 'plantillas.php';
+require 'cliente_cliente.php';
+require 'busqueda_catalogo_sat.php';
 $app->get('/api/', function(Request $request, Response $response){
     $mensaje = array(
         'status' => true,

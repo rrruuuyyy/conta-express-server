@@ -10,6 +10,7 @@
             $CFDI->Otros = (object)[];
             $Conceptos = [];
             $UUID_vinculados = [];
+            error_reporting(0);
             $xml = simplexml_load_file( $archivo_xml );
             // if( $xml === false ){
             //     return false;
